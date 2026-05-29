@@ -137,9 +137,54 @@ Header (1-byte type + 4-byte length) + Payload + Trailer (4-byte CRC32)
 
 The CRC32 covers all bytes of the header and payload.
 
+Header defines the physical boundary of the frame; the top-level Envelope inside Payload defines frame type discrimination. See Chapter 8 for full Envelope specification.
+
 ---
 
-## 8. Protocol Boundaries Reaffirmed
+## 8. Frame Envelope
+
+### 8.1 Purpose
+
+CIB frame binary layout (Header + Payload) defines physical boundaries, but does not specify how to distinguish frame types. To eliminate overhead and ambiguity caused by blind try-parse for frame type detection on the receiver side, the top layer of Payload **MUST** be a unified Envelope structure.
+
+### 8.2 Envelope structure
+
+The envelope is a JSON or MessagePack object (per negotiated WireFormat) with the following fixed fields:
+
+| Field | Type | Required | Description |
+|------|------|------|------|
+| `type` | string | Yes | Frame type: `"request"`, `"response"`, `"event"` |
+| `id` | string | Yes | Session identifier for correlating requests and responses. Set to empty string `""` for event frames |
+| `body` | object | Yes | Frame payload carrying business data |
+
+### 8.3 Frame Type Definition
+
+| Type Value | Direction | Description |
+|----------|------|------|
+| `"request"` | Client → Server | Client-initiated request (e.g. CAP Action) |
+| `"response"` | Server → Client | Server reply to a request |
+| `"event"` | Server → Client | Server-initiated unsolicited event, no client response expected |
+
+### 8.4 Predefined Events
+
+When `type` is `"event"`, the `body` field **MUST** contain an `event` field to declare the event name.
+
+| Event Name | Carried Data Type | Description |
+|--------|-------------|------|
+| `snapshot/update` | CAP `SemanticSnapshot` | Agent state projection updated, client shall re-render UI |
+| `manifest/update` | CAP `CapabilityManifest` | Agent capability declaration changed |
+| `heartbeat` | `{ "epoch": u64 }` | Agent liveness signal |
+
+### 8.5 Heartbeat and Silent Period Suspend
+
+- Agent **MUST** send at least one `heartbeat` event every **5 seconds** during an active connection.
+- If a client receives no frames for more than **10 seconds**, it **SHOULD** mark the connection as lost and render degraded view.
+- **Silent Period Suspend**: When the underlying transport (STDIO / UDS / TCP) disconnects, the Agent **MUST** immediately suspend the heartbeat timer. The heartbeat mechanism can only be re-enabled after a new client handshake is detected and completed. This ensures the Agent enters zero-power sleep state when no client is connected.
+- The push interval of `snapshot/update` events **SHOULD** be no less than **150ms**. The Agent shall implement debounce logic to avoid client rendering jitter caused by frequent updates.
+
+---
+
+## 9. Protocol Boundaries Reaffirmed
 
 CIB is the thinnest layer in the protocol stack. Its existence is not to add new functionality, but to isolate change. It defines no new interaction semantics, introduces no new security mechanisms, and binds to no specific transport implementation.
 
