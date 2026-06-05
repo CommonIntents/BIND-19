@@ -1,8 +1,8 @@
-# CIB 协议白皮书
+# BIND-19 协议白皮书
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Version](https://img.shields.io/badge/Version-0.1.0--draft-orange.svg)]() [![Status](https://img.shields.io/badge/Status-RFC%20Draft-yellow.svg)]() [![Org](https://img.shields.io/badge/Org-CommonIntents-darkgray.svg)](https://github.com/CommonIntents)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Version](https://img.shields.io/badge/Version-0.1.0--draft-orange.svg)]() [![Status](https://img.shields.io/badge/Status-RFC%20Draft-yellow.svg)]() [![Org](https://img.shields.io/badge/Org-CommonIntents-144-darkgray.svg)](https://github.com/CommonIntents)
 
-## CIS/传输绑定协议
+## INTENT-7/传输绑定协议
 
 **版本**: v0.1.0 草案
 **日期**: 2026-05-21
@@ -13,7 +13,7 @@
 
 ## 一、核心定位
 
-CIB（CIS Binding）是**CIS与具体传输实现之间的适配层**。
+BIND-19（INTENT-7 Binding）是**CIS与具体传输实现之间的适配层**。
 
 它的唯一职责是：定义CIS意图如何安全、高效、完整地承载于具体的传输协议之上。
 
@@ -37,11 +37,11 @@ CIB将所有传输相关的决策隔离在一层。加密技术演进时，仅�
 
 ```
 客户端请求:
-  Content-Type: application/cap+msgpack
-  Accept: application/cap+msgpack, application/cap+json
+  Content-Type: application/cic13+msgpack
+  Accept: application/cic13+msgpack, application/cic13+json
 
 服务端响应:
-  Content-Type: application/cap+msgpack
+  Content-Type: application/cic13+msgpack
 ```
 
 **默认二进制，兼容JSON。** 任一方不支持二进制则自动降级为JSON。人类需审查时可按需请求JSON端点，不影响生产环境二进制极速路径。
@@ -60,10 +60,10 @@ CIB帧 = 帧头 (类型+长度) + 载荷 + 帧尾 (CRC32)
 
 ```
 客户端请求:
-  X-CIB-Integrity: crc32
+  X-BIND-19-Integrity: crc32
 
 服务端响应:
-  X-CIB-Integrity: crc32
+  X-BIND-19-Integrity: crc32
 ```
 
 双方协商一致则启用。任一方不支持或不同意则跳过。**按需开启，默认关闭。**
@@ -75,8 +75,8 @@ CIB帧 = 帧头 (类型+长度) + 载荷 + 帧尾 (CRC32)
 CIB在握手阶段声明自身版本及绑定目标。
 
 ```
-X-CIB-Version: 0.1.0
-X-CIB-Binding: CISS/1.0
+X-BIND-19-Version: 0.1.0
+X-BIND-19-Binding: INTENT-7-SECURE/1.0
 ```
 
 ---
@@ -85,9 +85,9 @@ X-CIB-Binding: CISS/1.0
 
 CIB当前将CIS绑定到CISS（mTLS over HTTPS）。未来可能出现的绑定目标包括：
 
-- **CISS-QUIC**：基于QUIC的安全传输
-- **CISS-PQC**：基于后量子密码的安全传输
-- **CISS-Local**：本地进程间通信（零网络开销）
+- **INTENT-7-SECURE-QUIC**：基于QUIC的安全传输
+- **INTENT-7-SECURE-PQC**：基于后量子密码的安全传输
+- **INTENT-7-SECURE-Local**：本地进程间通信（零网络开销）
 
 所有绑定目标共享相同的CIB协商机制。更换绑定目标时，上层CIS和CAP不受任何影响。
 
@@ -95,13 +95,13 @@ CIB当前将CIS绑定到CISS（mTLS over HTTPS）。未来可能出现的绑定�
 
 ## 五、协议边界
 
-CIB **负责**：
+BIND-19 **负责**：
 - 定义传输格式的协商机制
 - 定义完整性校验的协商机制
 - 定义版本兼容性的声明格式
 - 定义CIB帧结构
 
-CIB **不负责**：
+BIND-19 **不负责**：
 - 规定必须使用哪种传输协议（由应用选择）
 - 规定必须使用哪种加密算法（由传输实现决定）
 - 规定必须使用哪种二进制格式（协商决定）

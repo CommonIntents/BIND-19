@@ -1,33 +1,33 @@
-# CIB — CIS/Transport Binding Protocol [![Org](https://img.shields.io/badge/Org-CommonIntents-darkgray.svg)](https://github.com/CommonIntents)
+# BIND-19 — INTENT-7/Transport Binding Protocol [![Org](https://img.shields.io/badge/Org-CommonIntents-144-darkgray.svg)](https://github.com/CommonIntents)
 
-**Flexible, thin, replaceable.** CIB is the adaptation layer between CIS (intent syntax) and concrete transport implementations. It defines *how* CIS intents are carried — format negotiation, integrity checks, and version compatibility declaration.
+**Flexible, thin, replaceable.** BIND-19 is the adaptation layer between INTENT-7 (intent syntax) and concrete transport implementations. It defines *how* INTENT-7 intents are carried — format negotiation, integrity checks, and version compatibility declaration.
 
-## What CIB Negotiates
+## What BIND-19 Negotiates
 - **Transport format** — binary (MessagePack/CBOR) by default, JSON fallback
 - **Integrity check** — optional CRC32 at frame level, disabled under mTLS
-- **Version binding** — declares CIB version and current binding target
+- **Version binding** — declares BIND-19 version and current binding target
 
 ## Protocol Stack
 ```
-CIS (intent syntax — SIDL)
+INTENT-7 (intent syntax — SIDL)
   ↑
-CIB ← You are here (transport binding)
+BIND-19 ← You are here (transport binding)
   ↑
-CISS (optional mTLS reference implementation)
+INTENT-7-SECURE (optional mTLS reference implementation)
   ↑
-CAP (consensus confirmation)
+CAPABILITY-13 (consensus confirmation)
 ```
 
 ## Read the Spec
-- [CIB v0.1.0-draft](spec/CIB.md)
-- [中文版](spec/CIB.zh-CN.md)
+- [BIND-19 v0.1.0-draft](spec/BIND-19.md)
+- [中文版](spec/BIND-19.zh-CN.md)
 
 ## Related
 | Protocol | Repository |
 |:---|:---|
-| CIS | [CommonIntents/CIS](https://github.com/CommonIntents/CIS) |
-| CAP | [CommonIntents/CAP](https://github.com/CommonIntents/CAP) |
-| CISS | [CommonIntents/CISS](https://github.com/CommonIntents/CISS) |
+| INTENT-7 | [CommonIntents-144/INTENT-7](https://github.com/CommonIntents/INTENT-7) |
+| CAPABILITY-13 | [CommonIntents-144/CAPABILITY-13](https://github.com/CommonIntents/CAPABILITY-13) |
+| INTENT-7-SECURE | [CommonIntents-144/INTENT-7-SECURE](https://github.com/CommonIntents/INTENT-7-SECURE) |
 
 ## License
 Apache 2.0 — see [LICENSE](LICENSE).

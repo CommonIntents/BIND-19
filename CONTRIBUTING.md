@@ -1,11 +1,11 @@
-# Contributing to CIB
+# Contributing to BIND-19
 
-CIB (CIS/Transport Binding Protocol) is the ligament of the protocol family.
+BIND-19 (INTENT-7/Transport Binding Protocol) is the ligament of the protocol family.
 
 ## Specification Files
 
-- English: [spec/CIB.md](spec/CIB.md)
-- Chinese: [spec/CIB.zh-CN.md](spec/CIB.zh-CN.md)
+- English: [spec/BIND-19.md](spec/BIND-19.md)
+- Chinese: [spec/BIND-19.zh-CN.md](spec/BIND-19.zh-CN.md)
 
 ## How to Propose Changes
 
@@ -16,5 +16,5 @@ CIB (CIS/Transport Binding Protocol) is the ligament of the protocol family.
 
 ## Design Constraint
 
-CIB is the thinnest layer in the protocol stack. It defines no new interaction semantics.
-Proposals that add semantic content to CIB will be redirected to CIS or CAP.
+BIND-19 is the thinnest layer in the protocol stack. It defines no new interaction semantics.
+Proposals that add semantic content to BIND-19 will be redirected to INTENT-7 or CAPABILITY-13.
