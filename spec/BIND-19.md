@@ -1,195 +1,194 @@
-# BIND-19: INTENT-7/Transport Binding Protocol
+# BIND-19: Transport Binding and Layered Semantic Framing Specification (v1.0.0-RFC-4)
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Version](https://img.shields.io/badge/Version-0.1.0--draft-orange.svg)]() [![Status](https://img.shields.io/badge/Status-RFC%20Draft-yellow.svg)]() [![Org](https://img.shields.io/badge/Org-CommonIntents--144-darkgray.svg)](https://github.com/CommonIntents)
+## 1. Introduction and Objectives
 
-**Version**: 0.1.0-draft  
-**Status**: Working Group Internal Draft  
-**Date**: 2026-05-22  
-**License**: Apache 2.0  
+This specification defines **BIND-19**, an independent, transport-level semantic framing and capability negotiation protocol within the **CommonIntents-144 (CI-144)** suite. 
 
----
-
-## 1. Core Positioning
-
-BIND-19 (INTENT-7 Binding) is the **adaptation layer between INTENT-7 and a concrete transport implementation**.
-
-Its sole responsibility is to define how INTENT-7 intents are carried securely, efficiently, and completely over a specific transport protocol.
-
-BIND-19 is the **ligament** of the protocol stack — flexible, thin, replaceable.
+To prevent architectural tight coupling (the "silo" anti-pattern), BIND-19 is strictly designed to be **completely orthogonal to the INTENT-7 semantic layer**. BIND-19 remains entirely oblivious to the specific business contents of its payload. It is solely responsible for:
+- Standardized binary frame boundaries (preventing TCP half-packet/sticky-packet fragmentation issues).
+- 256-channel logical multi-task multiplexing over a single physical connection.
+- TLS 1.3-style zero-RTT and negotiation-based transport capability handshakes.
+- Hard security boundaries, frame-level integrity verification, and anti-replay defense.
 
 ---
 
-## 2. Why BIND-19 Is Needed
+## 2. Fixed Header and Frame Layout
 
-INTENT-7 is a transport-agnostic semantic standard. Cryptographic algorithms evolve, transport protocols change, serialization formats update. If such changes required modifying INTENT-7, the lifespan of INTENT-7 would be bound to the transport layer.
+Every BIND-19 packet MUST begin with an 8-byte fixed-size header, followed by a variable-length payload. All multi-byte integers MUST be encoded in Big-Endian (Network Byte Order).
 
-BIND-19 isolates all transport-related decisions into a single layer. When cryptographic technology advances, only BIND-19's binding target needs updating. INTENT-7 itself remains completely unaffected.
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Frame Type   |  Channel ID   |     Flags     |  Sequence ID  |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Payload Length                         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                     Payload Data (Variable)                   |
+|                             ...                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+### 2.1 Header Field Definitions
+
+- **Frame Type (1 Byte)**: Defines the mathematical and routing semantics of the frame (see Section 3).
+- **Channel ID (1 Byte)**: Logical channel identifier supporting up to 256 parallel concurrent streams (multiplexing) over a single physical transport without Head-of-Line (HOL) blocking.
+- **Flags (1 Byte)**: Bitmask defining operational characteristics of the frame:
+  - `0x01` (**FIN**): Set if this is the final fragment of a split/partitioned payload.
+  - `0x02` (**CON**): Set if asynchronous Human-In-The-Loop (HITL) consensus via CAPABILITY-13 is required before execution.
+  - `0x04` (**SEC**): Set if the payload is encrypted at the frame layer (complementary to TLS).
+  - *Unassigned bits MUST be set to 0 by the sender and ignored by the receiver to ensure forward compatibility.*
+- **Sequence ID (1 Byte)**: Monotonically increasing sequence number within each `Channel ID` for packet reordering, deduplication, and sliding-window flow control.
+- **Payload Length (4 Bytes)**: Unsigned 32-bit integer indicating the size of the payload in bytes. Hard-capped at `0x04000000` (64MB) to mitigate out-of-memory (OOM) denial-of-service attacks.
 
 ---
 
-## 3. Core Responsibilities
+## 3. Frame Type Allocation and Governance (IANA-Style)
 
-### 3.1 Transport Format Negotiation
-
-During the handshake phase, the two parties negotiate the transport format via `Content-Type` and `Accept` headers.
+To prevent collision between official standard updates and local experimental extensions, BIND-19 enforces a strict partition of the 1-byte `FrameType` address space:
 
 ```
-Client Request:
-  Content-Type: application/cic13+msgpack
-  Accept: application/cic13+msgpack, application/cic13+json
-
-Server Response:
-  Content-Type: application/cic13+msgpack
++------------------+-------------------------------------------------+
+| FrameType Range  | Allocation & Governance Policy (IANA-Style)     |
++------------------+-------------------------------------------------+
+| 0x00             | Reserved / Invalid (Hard Exception)             |
+| 0x01 - 0x0E      | Standard Core (Immutable, locked in v1.0.0)     |
+| 0x0F - 0xEF      | Standard Extensions (Allocated ONLY via RFC PR) |
+| 0xF0 - 0xFF      | Private / Experimental Use (Zero Governance)   |
++------------------+-------------------------------------------------+
 ```
 
-**Binary by default, JSON compatible.** If either party does not support binary, the system automatically falls back to standard JSON. When humans need to review, they can request a JSON endpoint on demand without affecting the production binary fast path.
+### 3.1 Standard Core Frame Types
 
-Binary-to-JSON conversion is an O(n) formatting operation completed in microseconds.
-
-### 3.2 Integrity Check Negotiation
-
-BIND-19 introduces an optional integrity check at the frame layer.
-
+```rust
+#[repr(u8)]
+pub enum FrameType {
+    /// 0x01: Data Frame. Carries standard INTENT-7 JSON payload.
+    Data = 0x01,
+    
+    /// 0x02: Heartbeat Frame. Used for keep-alive. Payload MUST be 0.
+    Heartbeat = 0x02,
+    
+    /// 0x03: Control Frame. Carries system-level flow signals (CANCEL, SUSPEND, RESUME).
+    Control = 0x03,
+    
+    /// 0x04: Vector Frame. Carries high-frequency incremental mental energy arrays (e.g., SA-Core activation vectors).
+    Vector = 0x04,
+    
+    /// 0x05: Handshake Frame. Carries transport negotiation options during session initialization.
+    Handshake = 0x05,
+    
+    /// 0x06: Error Frame. Carries transport-level framing or negotiation failures.
+    Error = 0x06,
+}
 ```
-BIND-19 Frame = Header (type + length) + Payload + Trailer (CRC32)
-```
 
-**Negotiation Mechanism:**
+### 3.2 Standard Extension (0x0F - 0xEF) RFC Governance Process
+Any future addition to the standard extension range MUST follow the PR review lifecycle:
+1. **RFC Submission**: The applicant submits an RFC draft under `BIND-19/spec/drafts/` detailing the byte layout and performance impact.
+2. **Deterministic Check**: The CI pipeline automatically verifies that the frame format does not break the 8-byte fixed header boundaries or exceed the 64MB buffer limit.
+3. **Consensus Merge**: The PR must accumulate Ed25519 digital signatures from at least 3 active, independent seed instances to be merged into `main`.
+4. **Registry Generation**: Upon merging, the CI pipeline automatically compiles the metadata and updates the official `registry.json` list.
 
-```
-Client Request:
-  X-BIND-19-Integrity: crc32
-
-Server Response:
-  X-BIND-19-Integrity: crc32
-```
-
-If both parties agree, it is enabled. If either party does not support or agree, it is skipped. **Activated on demand, disabled by default.**
-
-When the underlying transport uses INTENT-7-SECURE (mTLS), TLS already provides integrity protection at the transport layer. The application-layer integrity check can be negotiated off to avoid redundant computation. In non-encrypted transport scenarios (such as local inter-process communication), it can be negotiated on.
-
-### 3.3 Version Compatibility Declaration
-
-BIND-19 declares its own version and the binding target during the handshake.
-
-```
-X-BIND-19-Version: 0.1.0
-X-BIND-19-Binding: INTENT-7-SECURE/1.0
-```
+### 3.3 Private Range (0xF0 - 0xFF) Exception Policy
+The private range is completely exempt from standard registration. Local implementations (such as experimental game-reflex streams) can use these bytes freely. Standard-compliant parsers encountering unknown private frames MUST skip them or delegate them to custom local plugins, rather than triggering a connection-level panic.
 
 ---
 
-## 4. Current Binding Target
+## 4. Connection Handshake and TLS 1.3-Style Version Negotiation
 
-BIND-19 currently binds INTENT-7 to INTENT-7-SECURE (mTLS over HTTPS). Possible future binding targets include:
+To prevent version desynchronization and lock-ins on public networks, BIND-19 establishes a dual-negotiation handshake mimicking TLS 1.3.
 
-- **INTENT-7-SECURE-QUIC**: Secure transport based on QUIC
-- **INTENT-7-SECURE-PQC**: Secure transport based on post-quantum cryptography
-- **INTENT-7-SECURE-Local**: Local inter-process communication (zero network overhead)
+### 4.1 Handshake Initialization (Frame Type 0x05)
+Upon connection, the client sends a `Handshake` frame containing its supported versions and capability bitmasks in a lightweight, flat JSON format:
 
-All binding targets share the same BIND-19 negotiation mechanism. When the binding target is changed, the upper layers INTENT-7 and CAPABILITY-13 are completely unaffected.
-
----
-
-## 5. Protocol Boundaries
-
-BIND-19 **is responsible for**:
-- Defining the transport format negotiation mechanism
-- Defining the integrity check negotiation mechanism
-- Defining the version compatibility declaration format
-- Defining the BIND-19 frame structure
-
-BIND-19 **is not responsible for**:
-- Mandating which transport protocol must be used (chosen by the application)
-- Mandating which encryption algorithm must be used (determined by the transport implementation)
-- Mandating which binary format must be used (decided by negotiation)
-- Providing the transport layer's security guarantees (provided by INTENT-7-SECURE or its alternatives)
-
----
-
-## 6. Relationship with INTENT-7-SECURE
-
-BIND-19 is the **specification**; INTENT-7-SECURE is the **implementation**.
-
-BIND-19 defines: "Intent data is carried over a secure transport channel in a negotiated format."
-
-INTENT-7-SECURE implements: "That secure channel is mTLS over HTTPS."
-
-A future INTENT-7-SECURE-PQC implements: "That secure channel is mTLS with post-quantum cryptography over HTTPS."
-
-BIND-19 does not change. INTENT-7 does not change. CAPABILITY-13 does not change. Only the transport implementation's version number changes.
-
----
-
-## 7. Frame Structure Definition
-
-### 7.1 Without Integrity Check
-
-```
-Header (1-byte type + 4-byte length) + Payload
+```json
+{
+  "client_supported_bind_versions": ["1.0", "1.1"],
+  "client_supported_intent_versions": ["1.0"],
+  "client_supported_capabilities": ["tlv_frame", "channel_multiplex", "flow_control"]
+}
 ```
 
-### 7.2 With Integrity Check (Negotiated On)
+#### Fields Description
+- `client_supported_bind_versions`: Array of strings. Lists the BIND-19 semantic frame protocol versions supported by the sender.
+- `client_supported_intent_versions`: Array of strings. Lists the INTENT-7 payload schema versions supported by the sender.
+- `client_supported_capabilities`: Array of strings. Declares optional BIND-19 features requested.
 
+### 4.2 Intersection Selection Algorithm
+1. The receiving server reads the client's version lists and compares them against its own local support list.
+2. The server selects the **highest mutually supported version** (e.g., if local supports `["1.0", "1.1"]` and client supports `["1.1", "1.2"]`, the negotiated version is `1.1`).
+3. The negotiated version and selected features are returned in the Handshake Response.
+4. **Mute Mismatch Drop**: If the intersection of supported versions is empty, the server MUST return an `Error (0x06)` frame with the code `0x01CC` (`460 Version Mismatch`) and immediately drop the physical TCP/Unix socket connection. No further backwards-compatible degradation is permitted.
+
+---
+
+## 5. Local Transport Binding (UDS & 0-RTT Implicit Negotiation)
+
+When the underlying physical layer is a **Unix Domain Socket (UDS, `unix://`)**, BIND-19 enforces a high-performance, zero-overhead **0-RTT Implicit Handshake**:
+
+- **No physical handshakes are transmitted**. Both client and server implicitly assume:
+  - `tlv_frame = true`
+  - `crc_check = false` (Zero risk of hardware-level packet corruption over local IPC loopback).
+  - `flow_control = false` (Relying purely on the OS kernel's socket buffer backpressure).
+- This eliminates the negotiation round-trip entirely, reducing local latency to **sub-millisecond (<0.5ms)** levels and saving massive amounts of ARM CPU cycles.
+
+---
+
+## 6. Error Codes
+
+When a framing or negotiation failure occurs, a `FrameType::Error (0x06)` is dispatched containing a 2-byte error code in its payload:
+
+| Error Code | Hexadecimal | Name | Description |
+|:---|:---|:---|:---|
+| `1024` | `0x0400` | `INVALID_FRAME_HEADER` | Fixed 8-byte header is corrupted or unparseable. |
+| `1120` | `0x0460` | `VERSION_MISMATCH` | Client and server share no overlapping SemVer matrix. |
+| `1200` | `0x04B0` | `BUFFER_OVERFLOW` | Frame payload size exceeds the 64MB hard limit. |
+| `1300` | `0x0514` | `UNALLOCATED_STANDARD_FRAME` | Standard extension frame received but not registered in BIND-19. |
+| `1400` | `0x0578` | `INTEGRITY_CHECKSUM_FAILED` | CRC or payload verification hash mismatch. |
+| `1500` | `0x05DC` | `CONSENSUS_UNAVAILABLE` | External CAPABILITY-13 confirmation engine is unreachable. |
+
+---
+
+## 7. Zero-Copy Rust Parsing Implementation Guidelines
+
+Conforming implementations of BIND-19 in Rust MUST utilize the `bytes` crate to ensure zero-allocation slicing of incoming frame streams:
+
+```rust
+// Implementation template using the `bytes` crate
+use bytes::{Bytes, BytesMut, Buf};
+
+pub struct FrameParser {
+    buffer: BytesMut,
+}
+
+impl FrameParser {
+    pub fn parse_frame(&mut self) -> Option<Result<(Header, Bytes), ErrorCode>> {
+        if self.buffer.len() < 8 {
+            return None; // Wait for more data (no allocations)
+        }
+        
+        // Peek at payload length without copying
+        let payload_len = u32::from_be_bytes([
+            self.buffer[4], self.buffer[5], self.buffer[6], self.buffer[7]
+        ]) as usize;
+        
+        if payload_len > 0x04000000 {
+            return Some(Err(ErrorCode::BufferOverflow));
+        }
+        
+        if self.buffer.len() < 8 + payload_len {
+            return None; // Wait for full payload to arrive
+        }
+        
+        // Advance buffer pointer and slice zero-copy payload
+        let header_bytes = self.buffer.split_to(8);
+        let payload_bytes = self.buffer.split_to(payload_len).freeze();
+        
+        let header = Header::from_bytes(header_bytes);
+        Some(Ok((header, payload_bytes)))
+    }
+}
 ```
-Header (1-byte type + 4-byte length) + Payload + Trailer (4-byte CRC32)
-```
 
-The CRC32 covers all bytes of the header and payload.
-
-Header defines the physical boundary of the frame; the top-level Envelope inside Payload defines frame type discrimination. See Chapter 8 for full Envelope specification.
-
----
-
-## 8. Frame Envelope
-
-### 8.1 Purpose
-
-BIND-19 frame binary layout (Header + Payload) defines physical boundaries, but does not specify how to distinguish frame types. To eliminate overhead and ambiguity caused by blind try-parse for frame type detection on the receiver side, the top layer of Payload **MUST** be a unified Envelope structure.
-
-### 8.2 Envelope structure
-
-The envelope is a JSON or MessagePack object (per negotiated WireFormat) with the following fixed fields:
-
-| Field | Type | Required | Description |
-|------|------|------|------|
-| `type` | string | Yes | Frame type: `"request"`, `"response"`, `"event"` |
-| `id` | string | Yes | Session identifier for correlating requests and responses. Set to empty string `""` for event frames |
-| `body` | object | Yes | Frame payload carrying business data |
-
-### 8.3 Frame Type Definition
-
-| Type Value | Direction | Description |
-|----------|------|------|
-| `"request"` | Client → Server | Client-initiated request (e.g. CAPABILITY-13 Action) |
-| `"response"` | Server → Client | Server reply to a request |
-| `"event"` | Server → Client | Server-initiated unsolicited event, no client response expected |
-
-### 8.4 Predefined Events
-
-When `type` is `"event"`, the `body` field **MUST** contain an `event` field to declare the event name.
-
-| Event Name | Carried Data Type | Description |
-|--------|-------------|------|
-| `snapshot/update` | CAPABILITY-13 `SemanticSnapshot` | Agent state projection updated, client shall re-render UI |
-| `manifest/update` | CAPABILITY-13 `CapabilityManifest` | Agent capability declaration changed |
-| `heartbeat` | `{ "epoch": u64 }` | Agent liveness signal |
-
-### 8.5 Heartbeat and Silent Period Suspend
-
-- Agent **MUST** send at least one `heartbeat` event every **5 seconds** during an active connection.
-- If a client receives no frames for more than **10 seconds**, it **SHOULD** mark the connection as lost and render degraded view.
-- **Silent Period Suspend**: When the underlying transport (STDIO / UDS / TCP) disconnects, the Agent **MUST** immediately suspend the heartbeat timer. The heartbeat mechanism can only be re-enabled after a new client handshake is detected and completed. This ensures the Agent enters zero-power sleep state when no client is connected.
-- The push interval of `snapshot/update` events **SHOULD** be no less than **150ms**. The Agent shall implement debounce logic to avoid client rendering jitter caused by frequent updates.
-
----
-
-## 9. Protocol Boundaries Reaffirmed
-
-BIND-19 is the thinnest layer in the protocol stack. Its existence is not to add new functionality, but to isolate change. It defines no new interaction semantics, introduces no new security mechanisms, and binds to no specific transport implementation.
-
-**BIND-19 exists so that INTENT-7 never needs to know what transport layer it is running on.**
-
----
-
-*This white paper is maintained by the INTENT-7/CAPABILITY-13 Protocol Working Group.*
+This guarantees optimal performance on resource-constrained ARM matrices while preventing memory fragmentation.
