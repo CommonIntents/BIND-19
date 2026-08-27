@@ -19,15 +19,15 @@ CAPABILITY-13 (consensus confirmation)
 ```
 
 ## Read the Spec
-- [BIND-19 v0.1.0-draft](spec/BIND-19.md)
+- [BIND-19 v1.0.0-RFC-4](spec/BIND-19.md)
 - [中文版](spec/BIND-19.zh-CN.md)
 
 ## Related
 | Protocol | Repository |
 |:---|:---|
-| INTENT-7 | [CommonIntents-144/INTENT-7](https://github.com/CommonIntents/INTENT-7) |
-| CAPABILITY-13 | [CommonIntents-144/CAPABILITY-13](https://github.com/CommonIntents/CAPABILITY-13) |
-| INTENT-7-SECURE | [CommonIntents-144/INTENT-7-SECURE](https://github.com/CommonIntents/INTENT-7-SECURE) |
+| INTENT-7 | [CommonIntents/INTENT-7](https://github.com/CommonIntents/INTENT-7) |
+| CAPABILITY-13 | [CommonIntents/CAPABILITY-13](https://github.com/CommonIntents/CAPABILITY-13) |
+| INTENT-7-SECURE | [CommonIntents/INTENT-7-SECURE](https://github.com/CommonIntents/INTENT-7-SECURE) |
 
 ## License
 Apache 2.0 — see [LICENSE](LICENSE).
