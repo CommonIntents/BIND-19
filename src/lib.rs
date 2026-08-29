@@ -12,12 +12,14 @@
 //! - `config` — 运行时配置（调试模式 CI144_DEBUG + 环境变量）
 //! - `rotation` — 密钥轮换状态机（KEY_ROTATION 帧 + ACK 超时 fail-closed）
 //! - `catastrophic` — CATASTROPHIC 硬覆盖（规则 1-3）+ 事件驱动总线 + 审计日志
+//! - `replay_cache` — 高并发防重放缓存（DashMap + TTL 清理，多租户隔离）
 
 pub mod catastrophic;
 pub mod config;
 pub mod crypto;
 pub mod frame;
 pub mod pfp;
+pub mod replay_cache;
 pub mod rotation;
 pub mod sap;
 
@@ -27,6 +29,10 @@ pub use catastrophic::{
     EVENT_BUS_CAPACITY,
 };
 pub use config::{BindConfig, DEBUG_ENV_VAR};
+pub use replay_cache::{
+    ReplayCache, ReplayCheckResult, ReplayKey, SourceId, TenantId,
+    REPLAY_CACHE_DEFAULT_TTL, REPLAY_CACHE_MAX_CAPACITY,
+};
 pub use rotation::{
     KeyRotationPayload, KeyRotationStateMachine, RotationError, RotationState, TimeoutResult,
     ACK_TIMEOUT, MAX_RETRIES, NONCE_SIZE, ROTATION_THRESHOLD,

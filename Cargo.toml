@@ -4,6 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+dashmap = "6"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 rand = "0.8"
 sha2 = "0.10"
+
+# B4 压测时启用（criterion 编译较慢，2013款MBP预估5-10分钟）
+# [dev-dependencies]
+# criterion = { version = "0.5", features = ["html_reports"] }
+# [[bench]]
+# name = "replay_bench"
+# harness = false
