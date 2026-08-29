@@ -1,4 +1,4 @@
-# ADR-0030：CI-144 v2.0 Seq-Counter 32-bit 扩展方案
+# ADR-0009：CI-144 v2.0 Seq-Counter 32-bit 扩展方案
 
 ## 状态
 **Draft**（2026-08-29，Beta 阶段评估，不阻塞当前 v2.0-alpha.0 设计冻结）

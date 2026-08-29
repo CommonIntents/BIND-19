@@ -1,4 +1,4 @@
-# ADR-0024：CI-144 v2.0 密钥吊销流程（Anaphase 发起 + BIND-19 广播）
+# ADR-0003：CI-144 v2.0 密钥吊销流程（Anaphase 发起 + BIND-19 广播）
 
 ## 状态
 **Draft**（2026-08-29，Alpha 实现期间待锁定）

@@ -1,4 +1,4 @@
-# ADR-0025：CI-144 v2.0 KEY_ROTATION 控制帧格式（BIND-19 新帧类型）
+# ADR-0004：CI-144 v2.0 KEY_ROTATION 控制帧格式（BIND-19 新帧类型）
 
 ## 状态
 **Draft**（2026-08-29，Alpha 实现期间待锁定）

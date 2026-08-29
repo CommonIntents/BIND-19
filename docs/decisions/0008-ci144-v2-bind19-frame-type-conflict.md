@@ -1,23 +1,33 @@
-# ADR-0029：CI-144 v2.0 BIND-19 帧类型 0x07 冲突确认
+# ADR-0008：CI-144 v2.0 BIND-19 帧类型 0x07 冲突确认
 
 ## 状态
-**Draft**（2026-08-29，v2.0-alpha.1 前必须锁定）
+**Active**（2026-08-29，T2 实现期间完成逆向检查，确认 0x07 未被占用）
 
 ## 上下文
 CI-144 v2.0 规则 7 定义了 KEY_ROTATION 控制帧，建议使用 BIND-19 帧类型 Type=0x07。但 BIND-19 v1.0 可能已分配该帧类型，需确认是否冲突。
 
-## 决策（初步定案，v2.0-alpha.1 前最终确认）
-- 由 Anaphase 协议维护组负责在 v2.0-alpha.1 前完成 BIND-19 v1.0 类型分配表逆向检查
-- 若 Type=0x07 未被占用，确认使用 0x07
-- 若 Type=0x07 已被占用，重新分配（备用 0x0F），并将确认结果写入本 ADR
-- 帧类型分配结果必须在 v2.0-alpha.1 发布前锁定，避免实现不一致
+## 决策（已锁定）
+- **BIND-19 v1.0 类型分配表逆向检查结果**（T2 实现期间完成）：
+  - Standard Core（0x01-0x0E，Immutable）：
+    - 0x01: Data
+    - 0x02: Heartbeat
+    - 0x03: Control
+    - 0x04: Vector
+    - 0x05: Handshake
+    - 0x06: Error
+    - 0x07-0x0E: **未分配**（Reserved for future Standard Core）
+  - Standard Extensions（0x0F-0xEF）：需 RFC 流程
+  - Private/Experimental（0xF0-0xFF）：零治理
+- **确认结果**：0x07 未被占用，KEY_ROTATION 控制帧使用 **Type=0x07**
+- 0x07 属于 Standard Core 范围（0x01-0x0E），一旦 v2.0 发布即冻结，不可重新分配
 
 ## 后果
-- KEY_ROTATION 帧的帧类型在 v2.0-alpha.1 前可能变更
-- 实现方需等待本 ADR 锁定后再硬编码帧类型
-- 若重新分配，需同步更新规范正文（规则 7）和所有实现
+- KEY_ROTATION 帧的帧类型锁定为 0x07
+- 实现方可硬编码帧类型 0x07
+- 规范正文（规则 7）需同步更新帧类型为 0x07
 
 ## 关联
-- CI-144 v2.0 升级计划（docs/vision/ci-144-v2.0-upgrade.md）
+- CI-144 v2.0 升级计划（docs/v2.0-upgrade-plan.md）
 - 规则 7（密钥轮换流程，KEY_ROTATION 帧）
-- ADR-0025（KEY_ROTATION 帧格式）
+- ADR-0004（KEY_ROTATION 帧格式）
+- spec/BIND-19.md（v1.0.0-RFC-4 帧类型分配表）
