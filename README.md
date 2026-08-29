@@ -139,6 +139,59 @@ cargo bench --bench replay_bench
 - [Growth Log (GROWTH)](GROWTH.md)
 - [Architecture Decision Records](docs/decisions/)
 
+## Test Vectors & Examples
+
+### Test Vectors (33 sets, 8 categories)
+
+Machine-readable JSON test vectors for other compatible implementations:
+
+- **[`tests/test_vectors/ci-144-v2.0-test-vectors.json`](tests/test_vectors/ci-144-v2.0-test-vectors.json)** — 33 sets, 21KB
+- **[`tests/test_vectors/README.md`](tests/test_vectors/README.md)** — Human-readable documentation with usage examples
+
+| Category | Count | Content |
+|---|---|---|
+| `pfp_codec` | 5 | PFP 4-byte encode/decode (Modality/Risk/Stance/Edge/flags) |
+| `sap_codec` | 5 | SAP 28-byte encode/decode (Seq-Counter boundary values) |
+| `frame_codec` | 5 | Full frame encode/decode (v1.0 compat / PFP-only / PFP+SAP / payload) |
+| `replay_protection` | 5 | Replay protection (normal increment / exact replay / old seq / new source) |
+| `rule6_downgrade` | 3 | Rule 6 downgrade (Replay-Enable=0 → MEDIUM) |
+| `key_rotation` | 4 | Key rotation state machine (threshold / start / ACK / complete) |
+| `catastrophic_detection` | 3 | CATASTROPHIC detection (Risk+Override combinations) |
+| `pah_signature` | 3 | PAH signature (full Ed25519 / 64-bit truncation / wrong signature) |
+
+Generate test vectors locally:
+```bash
+cargo run --example generate_test_vectors
+```
+
+### Examples (4 key usage examples)
+
+| Example | Description | Run |
+|---|---|---|
+| [`basic_frame.rs`](examples/basic_frame.rs) | Basic frame create/encode/decode | `cargo run --example basic_frame` |
+| [`replay_protection.rs`](examples/replay_protection.rs) | ReplayCache + FrameProcessor usage | `cargo run --example replay_protection` |
+| [`tuck_integration.rs`](examples/tuck_integration.rs) | **Tuck hard-real-time decision path** (most important ecosystem example) | `cargo run --example tuck_integration` |
+| [`generate_test_vectors.rs`](examples/generate_test_vectors.rs) | Test vector generator | `cargo run --example generate_test_vectors` |
+
+### Multi-Tenant Tests (9 scenarios)
+
+Comprehensive multi-tenant isolation verification in [`tests/multi_tenant_test.rs`](tests/multi_tenant_test.rs):
+
+- Cross-tenant cache isolation
+- Cross-tenant counter isolation
+- Cross-tenant key rotation state machine isolation
+- Multi-tenant concurrent access (10 tenants × 100 seq)
+- Tenant ID boundary cases (0 / u64::MAX)
+- Same tenant different source isolation
+- FrameProcessor multi-tenant processing
+- Multi-tenant cache capacity (1000 combinations)
+- Multi-tenant rule6 downgrade isolation
+
+Run all tests:
+```bash
+cargo test --all-targets
+```
+
 ## Related
 | Protocol | Repository |
 |:---|:---|
