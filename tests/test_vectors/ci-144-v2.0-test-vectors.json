@@ -1,0 +1,720 @@
+{
+  "metadata": {
+    "categories": [
+      "catastrophic_detection",
+      "frame_codec",
+      "key_rotation",
+      "pah_signature",
+      "pfp_codec",
+      "replay_protection",
+      "rule6_downgrade",
+      "sap_codec"
+    ],
+    "description": "CI-144 v2.0 协议家族测试向量，供其他兼容实现验证使用",
+    "generated_at": "2026-08-29",
+    "protocol": "CI-144 v2.0",
+    "total_vectors": 33,
+    "usage": "每个测试向量包含 input（输入）和 expected（期望输出），实现者应验证 input 经过处理后等于 expected"
+  },
+  "vectors": {
+    "catastrophic_detection": [
+      {
+        "description": "CATASTROPHIC检测: risk=Catastrophic, override=HardOverride",
+        "expected": {
+          "actual": true,
+          "is_catastrophic_override": true
+        },
+        "id": "catastrophic-catastrophic_override",
+        "input": {
+          "override_flag": "HardOverride",
+          "pfp_bytes_hex": "cf14ee07",
+          "risk_level": "Catastrophic"
+        }
+      },
+      {
+        "description": "CATASTROPHIC检测: risk=Catastrophic, override=Normal",
+        "expected": {
+          "actual": false,
+          "is_catastrophic_override": false
+        },
+        "id": "catastrophic-catastrophic_no_override",
+        "input": {
+          "override_flag": "Normal",
+          "pfp_bytes_hex": "cf14ee05",
+          "risk_level": "Catastrophic"
+        }
+      },
+      {
+        "description": "CATASTROPHIC检测: risk=Critical, override=HardOverride",
+        "expected": {
+          "actual": false,
+          "is_catastrophic_override": false
+        },
+        "id": "catastrophic-critical_override",
+        "input": {
+          "override_flag": "HardOverride",
+          "pfp_bytes_hex": "cf14ea07",
+          "risk_level": "Critical"
+        }
+      }
+    ],
+    "frame_codec": [
+      {
+        "description": "完整帧编码: v1_compat",
+        "expected": {
+          "encoded_hex": "0101000000000000",
+          "header_size": 8,
+          "payload_size": 0,
+          "pfp_size": 0,
+          "sap_size": 0,
+          "total_size": 8
+        },
+        "id": "frame-v1_compat",
+        "input": {
+          "channel_id": 1,
+          "frame_type": "Data(0x01)",
+          "has_pfp": false,
+          "has_sap": false,
+          "payload_size": 0
+        }
+      },
+      {
+        "description": "完整帧编码: pfp_only",
+        "expected": {
+          "encoded_hex": "0101080000000000cf146605",
+          "header_size": 8,
+          "payload_size": 0,
+          "pfp_size": 4,
+          "sap_size": 0,
+          "total_size": 12
+        },
+        "id": "frame-pfp_only",
+        "input": {
+          "channel_id": 1,
+          "frame_type": "Data(0x01)",
+          "has_pfp": true,
+          "has_sap": false,
+          "payload_size": 0
+        }
+      },
+      {
+        "description": "完整帧编码: pfp_sap",
+        "expected": {
+          "encoded_hex": "0101180000000000cf146605cf140101002aababababababababababababababcdcdcdcdcdcdcdcd",
+          "header_size": 8,
+          "payload_size": 0,
+          "pfp_size": 4,
+          "sap_size": 28,
+          "total_size": 40
+        },
+        "id": "frame-pfp_sap",
+        "input": {
+          "channel_id": 1,
+          "frame_type": "Data(0x01)",
+          "has_pfp": true,
+          "has_sap": true,
+          "payload_size": 0
+        }
+      },
+      {
+        "description": "完整帧编码: pfp_sap_payload",
+        "expected": {
+          "encoded_hex": "0101180000000040cf146605cf140101002aababababababababababababababcdcdcdcdcdcdcdcdeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "header_size": 8,
+          "payload_size": 64,
+          "pfp_size": 4,
+          "sap_size": 28,
+          "total_size": 104
+        },
+        "id": "frame-pfp_sap_payload",
+        "input": {
+          "channel_id": 1,
+          "frame_type": "Data(0x01)",
+          "has_pfp": true,
+          "has_sap": true,
+          "payload_size": 64
+        }
+      },
+      {
+        "description": "完整帧编码: max_payload",
+        "expected": {
+          "encoded_hex": "0101180000000400cf146605cf140101002aababababababababababababababcdcdcdcdcdcdcdcdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "header_size": 8,
+          "payload_size": 1024,
+          "pfp_size": 4,
+          "sap_size": 28,
+          "total_size": 1064
+        },
+        "id": "frame-max_payload",
+        "input": {
+          "channel_id": 1,
+          "frame_type": "Data(0x01)",
+          "has_pfp": true,
+          "has_sap": true,
+          "payload_size": 1024
+        }
+      }
+    ],
+    "key_rotation": [
+      {
+        "description": "密钥轮换阈值检测: Seq-Counter >= 65534 触发",
+        "expected": {
+          "should_rotate": true,
+          "threshold": 65534
+        },
+        "id": "rotation-threshold-detection",
+        "input": {
+          "seq_counter": 65534
+        }
+      },
+      {
+        "description": "开始轮换后状态: Pending (retries=0)",
+        "expected": {
+          "is_pending": true,
+          "state": "Pending { retries: 0 }"
+        },
+        "id": "rotation-start-pending",
+        "input": {
+          "action": "start_rotation"
+        }
+      },
+      {
+        "description": "收到 ACK 后状态: Rotated",
+        "expected": {
+          "is_rotated": true,
+          "state": "Rotated"
+        },
+        "id": "rotation-ack-success",
+        "input": {
+          "action": "handle_ack"
+        }
+      },
+      {
+        "description": "完成轮换后状态: Idle (可开始下一次)",
+        "expected": {
+          "is_idle": true,
+          "state": "Idle"
+        },
+        "id": "rotation-complete-idle",
+        "input": {
+          "action": "complete_rotation"
+        }
+      }
+    ],
+    "pah_signature": [
+      {
+        "description": "完整 Ed25519 签名（64字节），固定种子可复现",
+        "expected": {
+          "algorithm": "Ed25519",
+          "full_signature_hex": "2368b11bfa44ee408afcc9248b289aff59226908215f64430e38b6c843a562f2f7c41d4976324c20a36a9cd63fd00102e6e01412f27c8111e01e5b1b55c97109",
+          "signature_size": 64
+        },
+        "id": "pah-full-signature",
+        "input": {
+          "message": "CI-144 v2.0 Physical Anchor Layer test message",
+          "message_hex": "43492d3134342076322e3020506879736963616c20416e63686f72204c617965722074657374206d657373616765",
+          "seed_hex": "4242424242424242424242424242424242424242424242424242424242424242"
+        }
+      },
+      {
+        "description": "64-bit 截断签名（8字节）= SHA-256(完整签名) 前64位(MSB)",
+        "expected": {
+          "matches_direct_sign_truncated": true,
+          "truncated_signature_hex": "709db036acb284f4",
+          "truncated_size": 8,
+          "truncation_algorithm": "SHA-256(full_sig)[0..8] (MSB, high 64 bits)"
+        },
+        "id": "pah-truncated-signature",
+        "input": {
+          "full_signature_hex": "2368b11bfa44ee408afcc9248b289aff59226908215f64430e38b6c843a562f2f7c41d4976324c20a36a9cd63fd00102e6e01412f27c8111e01e5b1b55c97109"
+        }
+      },
+      {
+        "description": "错误消息的签名截断值不匹配（第一层快速拒绝）",
+        "expected": {
+          "actual_truncated_hex": "17aa323b38aaf675",
+          "matches": false,
+          "should_reject": true
+        },
+        "id": "pah-wrong-signature-rejected",
+        "input": {
+          "actual_full_signature_hex": "94b9513dc1f5fb1fe09e8dcb7d0fa392b9553fb791bdf575a305e5fc6883d420facd6bb8f0063716fcd73eb29c914eecf1047d0368b3e587c79da8384790f205",
+          "actual_message": "wrong message",
+          "expected_truncated_hex": "709db036acb284f4"
+        }
+      }
+    ],
+    "pfp_codec": [
+      {
+        "description": "PFP 编码: Cognitive/Low/Unknown/Safe",
+        "expected": {
+          "encoded_bytes": [
+            207,
+            20,
+            48,
+            0
+          ],
+          "encoded_hex": "cf143000",
+          "family_magic": "0xCF14",
+          "size": 4
+        },
+        "id": "pfp-all_zero",
+        "input": {
+          "body_stance": "Unknown",
+          "modality": "Cognitive",
+          "output_dest": "Internal",
+          "override_flag": "Normal",
+          "proximity_edge": "Safe",
+          "replay_enable": false,
+          "risk_level": "Low"
+        }
+      },
+      {
+        "description": "PFP 编码: SensorFeed/Catastrophic/Moving/CriticalEdge",
+        "expected": {
+          "encoded_bytes": [
+            207,
+            20,
+            239,
+            7
+          ],
+          "encoded_hex": "cf14ef07",
+          "family_magic": "0xCF14",
+          "size": 4
+        },
+        "id": "pfp-all_one",
+        "input": {
+          "body_stance": "Moving",
+          "modality": "SensorFeed",
+          "output_dest": "External",
+          "override_flag": "HardOverride",
+          "proximity_edge": "CriticalEdge",
+          "replay_enable": true,
+          "risk_level": "Catastrophic"
+        }
+      },
+      {
+        "description": "PFP 编码: Executive/Medium/Standing/Warning",
+        "expected": {
+          "encoded_bytes": [
+            207,
+            20,
+            86,
+            5
+          ],
+          "encoded_hex": "cf145605",
+          "family_magic": "0xCF14",
+          "size": 4
+        },
+        "id": "pfp-typical_executive",
+        "input": {
+          "body_stance": "Standing",
+          "modality": "Executive",
+          "output_dest": "External",
+          "override_flag": "Normal",
+          "proximity_edge": "Warning",
+          "replay_enable": true,
+          "risk_level": "Medium"
+        }
+      },
+      {
+        "description": "PFP 编码: Cognitive/Low/Seated/Safe",
+        "expected": {
+          "encoded_bytes": [
+            207,
+            20,
+            0,
+            4
+          ],
+          "encoded_hex": "cf140004",
+          "family_magic": "0xCF14",
+          "size": 4
+        },
+        "id": "pfp-cognitive_low",
+        "input": {
+          "body_stance": "Seated",
+          "modality": "Cognitive",
+          "output_dest": "Internal",
+          "override_flag": "Normal",
+          "proximity_edge": "Safe",
+          "replay_enable": true,
+          "risk_level": "Low"
+        }
+      },
+      {
+        "description": "PFP 编码: Render/Critical/Moving/Danger",
+        "expected": {
+          "encoded_bytes": [
+            207,
+            20,
+            169,
+            5
+          ],
+          "encoded_hex": "cf14a905",
+          "family_magic": "0xCF14",
+          "size": 4
+        },
+        "id": "pfp-render_critical",
+        "input": {
+          "body_stance": "Moving",
+          "modality": "Render",
+          "output_dest": "External",
+          "override_flag": "Normal",
+          "proximity_edge": "Danger",
+          "replay_enable": true,
+          "risk_level": "Critical"
+        }
+      }
+    ],
+    "replay_protection": [
+      {
+        "description": "防重放检查: seq=101, 预填充last_seq=100",
+        "expected": {
+          "actual_result": "Allowed",
+          "allowed": true,
+          "result": "Allowed",
+          "rule": "seq > last_seen_seq → Allowed; seq <= last_seen_seq → Rejected; new source → Allowed"
+        },
+        "id": "replay-normal_increment",
+        "input": {
+          "last_seen_seq": 100,
+          "seq_counter": 101,
+          "source_id": 100,
+          "tenant_id": 1
+        }
+      },
+      {
+        "description": "防重放检查: seq=100, 预填充last_seq=100",
+        "expected": {
+          "actual_result": "Rejected",
+          "allowed": false,
+          "result": "Rejected",
+          "rule": "seq > last_seen_seq → Allowed; seq <= last_seen_seq → Rejected; new source → Allowed"
+        },
+        "id": "replay-exact_replay",
+        "input": {
+          "last_seen_seq": 100,
+          "seq_counter": 100,
+          "source_id": 100,
+          "tenant_id": 1
+        }
+      },
+      {
+        "description": "防重放检查: seq=50, 预填充last_seq=100",
+        "expected": {
+          "actual_result": "Rejected",
+          "allowed": false,
+          "result": "Rejected",
+          "rule": "seq > last_seen_seq → Allowed; seq <= last_seen_seq → Rejected; new source → Allowed"
+        },
+        "id": "replay-old_seq",
+        "input": {
+          "last_seen_seq": 100,
+          "seq_counter": 50,
+          "source_id": 100,
+          "tenant_id": 1
+        }
+      },
+      {
+        "description": "防重放检查: seq=65000, 预填充last_seq=100",
+        "expected": {
+          "actual_result": "Allowed",
+          "allowed": true,
+          "result": "Allowed",
+          "rule": "seq > last_seen_seq → Allowed; seq <= last_seen_seq → Rejected; new source → Allowed"
+        },
+        "id": "replay-large_jump",
+        "input": {
+          "last_seen_seq": 100,
+          "seq_counter": 65000,
+          "source_id": 100,
+          "tenant_id": 1
+        }
+      },
+      {
+        "description": "防重放检查: seq=1, 预填充last_seq=100",
+        "expected": {
+          "actual_result": "Allowed",
+          "allowed": true,
+          "result": "Allowed",
+          "rule": "seq > last_seen_seq → Allowed; seq <= last_seen_seq → Rejected; new source → Allowed"
+        },
+        "id": "replay-new_source",
+        "input": {
+          "last_seen_seq": 100,
+          "seq_counter": 1,
+          "source_id": 200,
+          "tenant_id": 1
+        }
+      }
+    ],
+    "rule6_downgrade": [
+      {
+        "description": "规则6降级: 原始风险=Catastrophic, Replay-Enable=false",
+        "expected": {
+          "actual_effective": "Medium",
+          "downgraded": true,
+          "effective_risk_level": "Medium"
+        },
+        "id": "rule6-catastrophic_replay_disabled",
+        "input": {
+          "original_risk_level": "Catastrophic",
+          "replay_enable": false
+        }
+      },
+      {
+        "description": "规则6降级: 原始风险=Critical, Replay-Enable=false",
+        "expected": {
+          "actual_effective": "Medium",
+          "downgraded": true,
+          "effective_risk_level": "Medium"
+        },
+        "id": "rule6-critical_replay_disabled",
+        "input": {
+          "original_risk_level": "Critical",
+          "replay_enable": false
+        }
+      },
+      {
+        "description": "规则6降级: 原始风险=Low, Replay-Enable=true",
+        "expected": {
+          "actual_effective": "Low",
+          "downgraded": false,
+          "effective_risk_level": "Low"
+        },
+        "id": "rule6-low_replay_enabled",
+        "input": {
+          "original_risk_level": "Low",
+          "replay_enable": true
+        }
+      }
+    ],
+    "sap_codec": [
+      {
+        "description": "SAP 编码: seq=0",
+        "expected": {
+          "encoded_bytes": [
+            207,
+            20,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "encoded_hex": "cf140101000000000000000000000000000000000000000000000000",
+          "family_magic": "0xCF14",
+          "protocol_id": "0x01",
+          "size": 28
+        },
+        "id": "sap-seq_zero",
+        "input": {
+          "pah_hash_hex": "0000000000000000000000000000",
+          "pah_signature_hex": "0000000000000000",
+          "seq_counter": 0
+        }
+      },
+      {
+        "description": "SAP 编码: seq=65535",
+        "expected": {
+          "encoded_bytes": [
+            207,
+            20,
+            1,
+            1,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "encoded_hex": "cf140101ffffffffffffffffffffffffffffffffffffffffffffffff",
+          "family_magic": "0xCF14",
+          "protocol_id": "0x01",
+          "size": 28
+        },
+        "id": "sap-seq_max",
+        "input": {
+          "pah_hash_hex": "ffffffffffffffffffffffffffff",
+          "pah_signature_hex": "ffffffffffffffff",
+          "seq_counter": 65535
+        }
+      },
+      {
+        "description": "SAP 编码: seq=42",
+        "expected": {
+          "encoded_bytes": [
+            207,
+            20,
+            1,
+            1,
+            0,
+            42,
+            171,
+            171,
+            171,
+            171,
+            171,
+            171,
+            171,
+            171,
+            171,
+            171,
+            171,
+            171,
+            171,
+            171,
+            205,
+            205,
+            205,
+            205,
+            205,
+            205,
+            205,
+            205
+          ],
+          "encoded_hex": "cf140101002aababababababababababababababcdcdcdcdcdcdcdcd",
+          "family_magic": "0xCF14",
+          "protocol_id": "0x01",
+          "size": 28
+        },
+        "id": "sap-seq_42",
+        "input": {
+          "pah_hash_hex": "abababababababababababababab",
+          "pah_signature_hex": "cdcdcdcdcdcdcdcd",
+          "seq_counter": 42
+        }
+      },
+      {
+        "description": "SAP 编码: seq=65534",
+        "expected": {
+          "encoded_bytes": [
+            207,
+            20,
+            1,
+            1,
+            255,
+            254,
+            17,
+            17,
+            17,
+            17,
+            17,
+            17,
+            17,
+            17,
+            17,
+            17,
+            17,
+            17,
+            17,
+            17,
+            34,
+            34,
+            34,
+            34,
+            34,
+            34,
+            34,
+            34
+          ],
+          "encoded_hex": "cf140101fffe11111111111111111111111111112222222222222222",
+          "family_magic": "0xCF14",
+          "protocol_id": "0x01",
+          "size": 28
+        },
+        "id": "sap-seq_rotation_threshold",
+        "input": {
+          "pah_hash_hex": "1111111111111111111111111111",
+          "pah_signature_hex": "2222222222222222",
+          "seq_counter": 65534
+        }
+      },
+      {
+        "description": "SAP 编码: seq=1000",
+        "expected": {
+          "encoded_bytes": [
+            207,
+            20,
+            1,
+            1,
+            3,
+            232,
+            222,
+            222,
+            222,
+            222,
+            222,
+            222,
+            222,
+            222,
+            222,
+            222,
+            222,
+            222,
+            222,
+            222,
+            173,
+            173,
+            173,
+            173,
+            173,
+            173,
+            173,
+            173
+          ],
+          "encoded_hex": "cf14010103e8dedededededededededededededeadadadadadadadad",
+          "family_magic": "0xCF14",
+          "protocol_id": "0x01",
+          "size": 28
+        },
+        "id": "sap-seq_1000",
+        "input": {
+          "pah_hash_hex": "dededededededededededededede",
+          "pah_signature_hex": "adadadadadadadad",
+          "seq_counter": 1000
+        }
+      }
+    ]
+  }
+}

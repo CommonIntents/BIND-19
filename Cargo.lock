@@ -43,6 +43,8 @@ dependencies = [
  "dashmap",
  "ed25519-dalek",
  "rand",
+ "serde",
+ "serde_json",
  "sha2",
 ]
 
