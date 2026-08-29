@@ -1,26 +1,28 @@
-//! Physical Anchor Layer (PAL) — 24-byte fixed-offset header
+//! PFP-xCF14 — Physical Feature Protocol（物理特征协议，冻结层）
 //!
-//! PAL 是 CI-144 v2.0 的物理锚定层，提供明文、固定偏移、可被 Tuck 硬实时读取的元数据。
-//! 总长度 24 字节（192 bits）= 3×64-bit 对齐 SIMD。
+//! PFP 是 CI-144 协议家族的物理特征层，提供明文、固定偏移、可被 Tuck 硬实时读取的物理元数据。
+//! 总长度 4 字节（32 bits），Tuck 只读这 4 字节做硬实时决策。
 //!
-//! 规范依据：docs/v2.0-upgrade-plan.md 第四章
+//! **冻结策略**：PFP-xCF14 一旦定稿，永远不变。任何修改必须产生新版本（如 PFP-xCF15）。
+//!
+//! 规范依据：docs/v2.0-upgrade-plan.md（协议家族架构）
 //! ADR：ADR-0001（PAH 第二层签名位置）
 
-/// PAL 总长度（字节）
-pub const PAL_SIZE: usize = 24;
+/// PFP 总长度（字节）
+pub const PFP_SIZE: usize = 4;
 
-/// Physical-Context-Hash 长度（字节）= 112 bits
-pub const PAH_SIZE: usize = 14;
+/// CI-144 家族魔数（2 字节，大端序 = 0xCF14）
+pub const FAMILY_MAGIC: u16 = 0xCF14;
 
-/// PAH-Signature 长度（字节）= 64 bits
-pub const SIG_SIZE: usize = 8;
+/// PFP 子协议 ID
+pub const PFP_PROTOCOL_ID: u8 = 0x00;
 
-/// PAL 当前版本（v2.0 = 0001）
-pub const PAL_VERSION: u8 = 0b0001;
+/// PFP 当前版本（由魔数隐式标识，xCF14 即版本锚点）
+pub const PFP_VERSION: u8 = 0x01;
 
 // ─── 枚举类型 ───────────────────────────────────────────────
 
-/// 操作模态（bit 0-1）
+/// 操作模态（PFP Byte2 bit 0-1）
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Modality {
@@ -45,7 +47,7 @@ impl Modality {
     }
 }
 
-/// 风险等级（bit 2-3）
+/// 风险等级（PFP Byte2 bit 2-3）
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum RiskLevel {
@@ -70,7 +72,7 @@ impl RiskLevel {
     }
 }
 
-/// 本体姿态（bit 4-5）
+/// 本体姿态（PFP Byte2 bit 4-5）
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum BodyStance {
@@ -95,7 +97,7 @@ impl BodyStance {
     }
 }
 
-/// 临边/高危环境（bit 6-7）
+/// 临边/高危环境（PFP Byte2 bit 6-7）
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum ProximityEdge {
@@ -120,7 +122,7 @@ impl ProximityEdge {
     }
 }
 
-/// 输出目的地（bit 8）
+/// 输出目的地（PFP Byte3 bit 0）
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum OutputDest {
@@ -138,7 +140,7 @@ impl OutputDest {
     }
 }
 
-/// 硬覆盖标志（bit 9）
+/// 硬覆盖标志（PFP Byte3 bit 1）
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum OverrideFlag {
@@ -156,45 +158,39 @@ impl OverrideFlag {
     }
 }
 
-// ─── PAL 结构体 ─────────────────────────────────────────────
+// ─── PFP 结构体 ─────────────────────────────────────────────
 
-/// Physical Anchor Layer — 24 字节固定偏移头部
+/// PFP-xCF14 — Physical Feature Protocol（4 字节固定偏移头部）
 ///
 /// 内存布局（大端序，网络字节序）：
 /// ```text
-/// Byte 0-1:   控制字段（16 bits）
-///   bit 0-1:   Modality
-///   bit 2-3:   Risk-Level
-///   bit 4-5:   Body-Stance
-///   bit 6-7:   Proximity-Edge
-///   bit 8:     Output-Dest
-///   bit 9:     Override-Flag
-///   bit 10-13: PAL-Version（4 bits，当前 v2.0 = 0001）
-///   bit 14:    Replay-Enable
-///   bit 15:    Reserved（强制为 0）
-/// Byte 2-15:  Physical-Context-Hash（112 bits = 14 bytes，SHA-256 截断高 112 位）
-/// Byte 16-23: PAH-Signature（64 bits = 8 bytes，ECC 签名截断 = SHA-256(完整签名) 前 64 位）
+/// Byte 0-1: Family-Magic（16 bits）= 0xCF14
+/// Byte 2:   物理特征数据（8 bits）
+///   bit 0-1: Modality
+///   bit 2-3: Risk-Level
+///   bit 4-5: Body-Stance
+///   bit 6-7: Proximity-Edge
+/// Byte 3:   控制标志（8 bits）
+///   bit 0:   Output-Dest
+///   bit 1:   Override-Flag
+///   bit 2:   Replay-Enable
+///   bit 3-7: Reserved（强制 0）
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PalHeader {
+pub struct PfpHeader {
     pub modality: Modality,
     pub risk_level: RiskLevel,
     pub body_stance: BodyStance,
     pub proximity_edge: ProximityEdge,
     pub output_dest: OutputDest,
     pub override_flag: OverrideFlag,
-    pub pal_version: u8,
     pub replay_enable: bool,
-    /// Reserved 位（bit 15），强制为 0。非零值触发版本协商流程。
-    pub reserved: bool,
-    /// Physical-Context-Hash（14 bytes，SHA-256 截断高 112 位）
-    pub physical_context_hash: [u8; PAH_SIZE],
-    /// PAH-Signature（8 bytes，ECC 签名截断 = SHA-256(完整签名) 前 64 位）
-    pub pah_signature: [u8; SIG_SIZE],
+    /// Reserved 位（bit 3-7 of Byte3），强制为 0。非零值触发版本协商流程。
+    pub reserved: u8,
 }
 
-impl PalHeader {
-    /// 创建新的 PAL 头部（默认 v2.0，Reserved=0）
+impl PfpHeader {
+    /// 创建新的 PFP 头部（Reserved 强制为 0）
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         modality: Modality,
@@ -204,8 +200,6 @@ impl PalHeader {
         output_dest: OutputDest,
         override_flag: OverrideFlag,
         replay_enable: bool,
-        physical_context_hash: [u8; PAH_SIZE],
-        pah_signature: [u8; SIG_SIZE],
     ) -> Self {
         Self {
             modality,
@@ -214,63 +208,52 @@ impl PalHeader {
             proximity_edge,
             output_dest,
             override_flag,
-            pal_version: PAL_VERSION,
             replay_enable,
-            reserved: false,
-            physical_context_hash,
-            pah_signature,
+            reserved: 0,
         }
     }
 
-    /// 编码为 24 字节大端序数组（固定偏移，零拷贝友好）
-    pub fn encode(&self) -> [u8; PAL_SIZE] {
-        let mut buf = [0u8; PAL_SIZE];
+    /// 编码为 4 字节大端序数组（固定偏移，零拷贝友好）
+    pub fn encode(&self) -> [u8; PFP_SIZE] {
+        let mut buf = [0u8; PFP_SIZE];
 
-        // Byte 0: 低 8 位控制字段
-        buf[0] = (self.modality.to_bits() & 0b11)
+        // Byte 0-1: Family-Magic = 0xCF14（大端序）
+        buf[0] = (FAMILY_MAGIC >> 8) as u8;
+        buf[1] = (FAMILY_MAGIC & 0xFF) as u8;
+
+        // Byte 2: 物理特征数据
+        buf[2] = (self.modality.to_bits() & 0b11)
             | ((self.risk_level.to_bits() & 0b11) << 2)
             | ((self.body_stance.to_bits() & 0b11) << 4)
             | ((self.proximity_edge.to_bits() & 0b11) << 6);
 
-        // Byte 1: 高 8 位控制字段
-        let mut byte1: u8 = 0;
-        if self.output_dest.to_bit() { byte1 |= 1 << 0; }
-        if self.override_flag.to_bit() { byte1 |= 1 << 1; }
-        byte1 |= (self.pal_version & 0b1111) << 2;
-        if self.replay_enable { byte1 |= 1 << 6; }
-        // bit 7 (Reserved) 强制为 0，不设置
-        buf[1] = byte1;
-
-        // Byte 2-15: Physical-Context-Hash
-        buf[2..2 + PAH_SIZE].copy_from_slice(&self.physical_context_hash);
-
-        // Byte 16-23: PAH-Signature
-        buf[2 + PAH_SIZE..2 + PAH_SIZE + SIG_SIZE].copy_from_slice(&self.pah_signature);
+        // Byte 3: 控制标志
+        let mut byte3: u8 = 0;
+        if self.output_dest.to_bit() { byte3 |= 1 << 0; }
+        if self.override_flag.to_bit() { byte3 |= 1 << 1; }
+        if self.replay_enable { byte3 |= 1 << 2; }
+        // bit 3-7: Reserved（强制为 0，不设置）
+        buf[3] = byte3;
 
         buf
     }
 
-    /// 从 24 字节大端序数组解码（固定偏移读取，零分配）
-    pub fn decode(buf: &[u8; PAL_SIZE]) -> Self {
-        let byte0 = buf[0];
-        let byte1 = buf[1];
+    /// 从 4 字节大端序数组解码（固定偏移读取，零分配）
+    ///
+    /// 注意：调用方应先验证 Family-Magic == 0xCF14，再调用此方法。
+    pub fn decode(buf: &[u8; PFP_SIZE]) -> Self {
+        let byte2 = buf[2];
+        let byte3 = buf[3];
 
-        let modality = Modality::from_bits(byte0 & 0b11);
-        let risk_level = RiskLevel::from_bits((byte0 >> 2) & 0b11);
-        let body_stance = BodyStance::from_bits((byte0 >> 4) & 0b11);
-        let proximity_edge = ProximityEdge::from_bits((byte0 >> 6) & 0b11);
+        let modality = Modality::from_bits(byte2 & 0b11);
+        let risk_level = RiskLevel::from_bits((byte2 >> 2) & 0b11);
+        let body_stance = BodyStance::from_bits((byte2 >> 4) & 0b11);
+        let proximity_edge = ProximityEdge::from_bits((byte2 >> 6) & 0b11);
 
-        let output_dest = OutputDest::from_bit((byte1 & (1 << 0)) != 0);
-        let override_flag = OverrideFlag::from_bit((byte1 & (1 << 1)) != 0);
-        let pal_version = (byte1 >> 2) & 0b1111;
-        let replay_enable = (byte1 & (1 << 6)) != 0;
-        let reserved = (byte1 & (1 << 7)) != 0;
-
-        let mut physical_context_hash = [0u8; PAH_SIZE];
-        physical_context_hash.copy_from_slice(&buf[2..2 + PAH_SIZE]);
-
-        let mut pah_signature = [0u8; SIG_SIZE];
-        pah_signature.copy_from_slice(&buf[2 + PAH_SIZE..2 + PAH_SIZE + SIG_SIZE]);
+        let output_dest = OutputDest::from_bit((byte3 & (1 << 0)) != 0);
+        let override_flag = OverrideFlag::from_bit((byte3 & (1 << 1)) != 0);
+        let replay_enable = (byte3 & (1 << 2)) != 0;
+        let reserved = (byte3 >> 3) & 0b11111;
 
         Self {
             modality,
@@ -279,12 +262,14 @@ impl PalHeader {
             proximity_edge,
             output_dest,
             override_flag,
-            pal_version,
             replay_enable,
             reserved,
-            physical_context_hash,
-            pah_signature,
         }
+    }
+
+    /// 验证 Family-Magic 是否为 0xCF14
+    pub fn verify_magic(buf: &[u8; PFP_SIZE]) -> bool {
+        u16::from_be_bytes([buf[0], buf[1]]) == FAMILY_MAGIC
     }
 
     /// 检查是否触发 CATASTROPHIC 硬覆盖（规则 1）
@@ -307,16 +292,11 @@ impl PalHeader {
 
     /// 检查 Reserved 位是否非零（触发版本协商流程）
     pub fn has_unknown_reserved(&self) -> bool {
-        self.reserved
-    }
-
-    /// 检查 PAL 版本是否匹配当前版本
-    pub fn is_version_current(&self) -> bool {
-        self.pal_version == PAL_VERSION
+        self.reserved != 0
     }
 }
 
-impl Default for PalHeader {
+impl Default for PfpHeader {
     fn default() -> Self {
         Self::new(
             Modality::Cognitive,
@@ -326,8 +306,6 @@ impl Default for PalHeader {
             OutputDest::Internal,
             OverrideFlag::Normal,
             true, // replay_enable 默认开启
-            [0u8; PAH_SIZE],
-            [0u8; SIG_SIZE],
         )
     }
 }
@@ -339,32 +317,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_pal_size_constants() {
-        assert_eq!(PAL_SIZE, 24);
-        assert_eq!(PAH_SIZE, 14);
-        assert_eq!(SIG_SIZE, 8);
-        assert_eq!(2 + PAH_SIZE + SIG_SIZE, PAL_SIZE);
+    fn test_pfp_size_constants() {
+        assert_eq!(PFP_SIZE, 4);
+        assert_eq!(FAMILY_MAGIC, 0xCF14);
+        assert_eq!(PFP_PROTOCOL_ID, 0x00);
+    }
+
+    #[test]
+    fn test_family_magic_encoding() {
+        let pfp = PfpHeader::default();
+        let encoded = pfp.encode();
+        assert_eq!(encoded[0], 0xCF);
+        assert_eq!(encoded[1], 0x14);
+        assert!(PfpHeader::verify_magic(&encoded));
     }
 
     #[test]
     fn test_encode_decode_roundtrip_default() {
-        let pal = PalHeader::default();
-        let encoded = pal.encode();
-        assert_eq!(encoded.len(), PAL_SIZE);
-        let decoded = PalHeader::decode(&encoded);
-        assert_eq!(pal, decoded);
+        let pfp = PfpHeader::default();
+        let encoded = pfp.encode();
+        assert_eq!(encoded.len(), PFP_SIZE);
+        let decoded = PfpHeader::decode(&encoded);
+        assert_eq!(pfp, decoded);
     }
 
     #[test]
     fn test_encode_decode_roundtrip_catastrophic() {
-        let mut pah = [0u8; PAH_SIZE];
-        pah[0] = 0xAA;
-        pah[13] = 0xFF;
-        let mut sig = [0u8; SIG_SIZE];
-        sig[0] = 0xDE;
-        sig[7] = 0xAD;
-
-        let pal = PalHeader::new(
+        let pfp = PfpHeader::new(
             Modality::Executive,
             RiskLevel::Catastrophic,
             BodyStance::Moving,
@@ -372,12 +351,10 @@ mod tests {
             OutputDest::External,
             OverrideFlag::HardOverride,
             true,
-            pah,
-            sig,
         );
 
-        let encoded = pal.encode();
-        let decoded = PalHeader::decode(&encoded);
+        let encoded = pfp.encode();
+        let decoded = PfpHeader::decode(&encoded);
 
         assert_eq!(decoded.modality, Modality::Executive);
         assert_eq!(decoded.risk_level, RiskLevel::Catastrophic);
@@ -385,16 +362,13 @@ mod tests {
         assert_eq!(decoded.proximity_edge, ProximityEdge::CriticalEdge);
         assert_eq!(decoded.output_dest, OutputDest::External);
         assert_eq!(decoded.override_flag, OverrideFlag::HardOverride);
-        assert_eq!(decoded.pal_version, PAL_VERSION);
         assert!(decoded.replay_enable);
-        assert!(!decoded.reserved);
-        assert_eq!(decoded.physical_context_hash, pah);
-        assert_eq!(decoded.pah_signature, sig);
+        assert_eq!(decoded.reserved, 0);
     }
 
     #[test]
-    fn test_fixed_offset_byte0() {
-        let pal = PalHeader::new(
+    fn test_fixed_offset_byte2() {
+        let pfp = PfpHeader::new(
             Modality::Render,       // bits 0-1 = 01
             RiskLevel::Critical,    // bits 2-3 = 10
             BodyStance::Standing,   // bits 4-5 = 01
@@ -402,75 +376,41 @@ mod tests {
             OutputDest::Internal,
             OverrideFlag::Normal,
             true,
-            [0u8; PAH_SIZE],
-            [0u8; SIG_SIZE],
         );
 
-        let encoded = pal.encode();
-        // byte0 = Render(01) | Critical(10)<<2 | Standing(01)<<4 | Warning(01)<<6
+        let encoded = pfp.encode();
+        // byte2 = 01 | 10<<2 | 01<<4 | 01<<6
         //       = 01 | 1000 | 010000 | 01000000
         //       = 01011001 = 0x59 = 89
-        assert_eq!(encoded[0], 0b01011001);
-        assert_eq!(encoded[0], 0x59);
+        assert_eq!(encoded[2], 0b01011001);
+        assert_eq!(encoded[2], 0x59);
     }
 
     #[test]
-    fn test_fixed_offset_byte1() {
-        let pal = PalHeader::new(
+    fn test_fixed_offset_byte3() {
+        let pfp = PfpHeader::new(
             Modality::Cognitive,
             RiskLevel::Low,
             BodyStance::Unknown,
             ProximityEdge::Safe,
-            OutputDest::External,   // bit 0 = 1
+            OutputDest::External,    // bit 0 = 1
             OverrideFlag::HardOverride, // bit 1 = 1
-            false,                  // bit 6 = 0 (replay_enable)
-            [0u8; PAH_SIZE],
-            [0u8; SIG_SIZE],
+            false,                   // bit 2 = 0 (replay_enable)
         );
 
-        let encoded = pal.encode();
-        // byte1: bit0=1 (External), bit1=1 (HardOverride), bits2-5=PAL_VERSION=0001 (bit2=1), bit6=0, bit7=0
-        // = 1 | 2 | 4 | 0 | 0 = 7 = 0x07 = 00000111
-        assert_eq!(encoded[1], 0b00000111);
-        assert_eq!(encoded[1], 0x07);
-    }
-
-    #[test]
-    fn test_pah_and_signature_offsets() {
-        let mut pah = [0u8; PAH_SIZE];
-        pah[0] = 0x11;
-        pah[PAH_SIZE - 1] = 0x22;
-        let mut sig = [0u8; SIG_SIZE];
-        sig[0] = 0x33;
-        sig[SIG_SIZE - 1] = 0x44;
-
-        let pal = PalHeader::new(
-            Modality::Cognitive,
-            RiskLevel::Low,
-            BodyStance::Unknown,
-            ProximityEdge::Safe,
-            OutputDest::Internal,
-            OverrideFlag::Normal,
-            true,
-            pah,
-            sig,
-        );
-
-        let encoded = pal.encode();
-        // PAH starts at byte 2
-        assert_eq!(encoded[2], 0x11);
-        assert_eq!(encoded[2 + PAH_SIZE - 1], 0x22);
-        // Signature starts at byte 2 + PAH_SIZE = 16
-        assert_eq!(encoded[2 + PAH_SIZE], 0x33);
-        assert_eq!(encoded[PAL_SIZE - 1], 0x44);
+        let encoded = pfp.encode();
+        // byte3: bit0=1, bit1=1, bit2=0, bit3-7=0
+        // = 00000011 = 0x03 = 3
+        assert_eq!(encoded[3], 0b00000011);
+        assert_eq!(encoded[3], 0x03);
     }
 
     #[test]
     fn test_catastrophic_override_detection() {
-        let pal_normal = PalHeader::default();
-        assert!(!pal_normal.is_catastrophic_override());
+        let pfp_normal = PfpHeader::default();
+        assert!(!pfp_normal.is_catastrophic_override());
 
-        let pal_cat = PalHeader::new(
+        let pfp_cat = PfpHeader::new(
             Modality::Executive,
             RiskLevel::Catastrophic,
             BodyStance::Moving,
@@ -478,13 +418,16 @@ mod tests {
             OutputDest::External,
             OverrideFlag::HardOverride,
             true,
-            [0u8; PAH_SIZE],
-            [0u8; SIG_SIZE],
         );
-        assert!(pal_cat.is_catastrophic_override());
+        assert!(pfp_cat.is_catastrophic_override());
 
         // Catastrophic risk but no override flag → not hard override
-        let pal_cat_no_override = PalHeader::new(
+        // (see test_catastrophic_no_override)
+    }
+
+    #[test]
+    fn test_catastrophic_no_override() {
+        let pfp_cat_no_override = PfpHeader::new(
             Modality::Executive,
             RiskLevel::Catastrophic,
             BodyStance::Moving,
@@ -492,69 +435,52 @@ mod tests {
             OutputDest::External,
             OverrideFlag::Normal,
             true,
-            [0u8; PAH_SIZE],
-            [0u8; SIG_SIZE],
         );
-        assert!(!pal_cat_no_override.is_catastrophic_override());
+        assert!(!pfp_cat_no_override.is_catastrophic_override());
     }
 
     #[test]
     fn test_replay_disabled_forces_medium_risk() {
         // Replay-Enable=1 → 保持原始风险等级
-        let pal_replay_on = PalHeader::new(
+        let pfp_replay_on = PfpHeader::new(
             Modality::Executive,
             RiskLevel::Catastrophic,
             BodyStance::Moving,
             ProximityEdge::CriticalEdge,
             OutputDest::External,
             OverrideFlag::HardOverride,
-            true, // replay_enable
-            [0u8; PAH_SIZE],
-            [0u8; SIG_SIZE],
+            true,
         );
-        assert_eq!(pal_replay_on.effective_risk_level(), RiskLevel::Catastrophic);
+        assert_eq!(pfp_replay_on.effective_risk_level(), RiskLevel::Catastrophic);
 
         // Replay-Enable=0 → 强制降级至 MEDIUM（规则 6）
-        let pal_replay_off = PalHeader::new(
+        let pfp_replay_off = PfpHeader::new(
             Modality::Executive,
             RiskLevel::Catastrophic,
             BodyStance::Moving,
             ProximityEdge::CriticalEdge,
             OutputDest::External,
             OverrideFlag::HardOverride,
-            false, // replay_enable = 0
-            [0u8; PAH_SIZE],
-            [0u8; SIG_SIZE],
+            false,
         );
-        assert_eq!(pal_replay_off.effective_risk_level(), RiskLevel::Medium);
+        assert_eq!(pfp_replay_off.effective_risk_level(), RiskLevel::Medium);
         // 原始风险等级仍保留在 risk_level 字段
-        assert_eq!(pal_replay_off.risk_level, RiskLevel::Catastrophic);
+        assert_eq!(pfp_replay_off.risk_level, RiskLevel::Catastrophic);
     }
 
     #[test]
-    fn test_reserved_bit_forced_zero_on_encode() {
-        let pal = PalHeader { reserved: true, ..Default::default() };
-        let encoded = pal.encode();
-        // 编码时 Reserved 位（bit 7 of byte1）强制为 0
-        assert_eq!(encoded[1] & (1 << 7), 0);
+    fn test_reserved_bits_forced_zero_on_encode() {
+        let pfp = PfpHeader { reserved: 0b11111, ..Default::default() };
+        let encoded = pfp.encode();
+        // 编码时 Reserved 位（bit 3-7 of byte3）强制为 0
+        assert_eq!(encoded[3] & 0b11111000, 0);
 
-        // 解码时如果输入有 Reserved=1，应该能检测到
-        let mut buf = pal.encode();
-        buf[1] |= 1 << 7; // 手动设置 Reserved=1
-        let decoded = PalHeader::decode(&buf);
+        // 解码时如果输入有 Reserved 非零，应该能检测到
+        let mut buf = pfp.encode();
+        buf[3] |= 0b11111000; // 手动设置 Reserved=非零
+        let decoded = PfpHeader::decode(&buf);
         assert!(decoded.has_unknown_reserved());
-    }
-
-    #[test]
-    fn test_pal_version_field() {
-        let pal = PalHeader::default();
-        assert_eq!(pal.pal_version, PAL_VERSION);
-        assert!(pal.is_version_current());
-
-        let encoded = pal.encode();
-        let decoded = PalHeader::decode(&encoded);
-        assert_eq!(decoded.pal_version, PAL_VERSION);
-        assert!(decoded.is_version_current());
+        assert_eq!(decoded.reserved, 0b11111);
     }
 
     #[test]
@@ -563,13 +489,13 @@ mod tests {
             for risk in [RiskLevel::Low, RiskLevel::Medium, RiskLevel::Critical, RiskLevel::Catastrophic] {
                 for stance in [BodyStance::Seated, BodyStance::Standing, BodyStance::Moving, BodyStance::Unknown] {
                     for edge in [ProximityEdge::Safe, ProximityEdge::Warning, ProximityEdge::Danger, ProximityEdge::CriticalEdge] {
-                        let pal = PalHeader::new(
+                        let pfp = PfpHeader::new(
                             modality, risk, stance, edge,
                             OutputDest::External, OverrideFlag::HardOverride,
-                            true, [0xAB; PAH_SIZE], [0xCD; SIG_SIZE],
+                            true,
                         );
-                        let encoded = pal.encode();
-                        let decoded = PalHeader::decode(&encoded);
+                        let encoded = pfp.encode();
+                        let decoded = PfpHeader::decode(&encoded);
                         assert_eq!(decoded.modality, modality);
                         assert_eq!(decoded.risk_level, risk);
                         assert_eq!(decoded.body_stance, stance);
@@ -578,5 +504,17 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_magic_verification() {
+        let pfp = PfpHeader::default();
+        let encoded = pfp.encode();
+        assert!(PfpHeader::verify_magic(&encoded));
+
+        // 篡改魔数
+        let mut bad = encoded;
+        bad[0] = 0x00;
+        assert!(!PfpHeader::verify_magic(&bad));
     }
 }

@@ -1,36 +1,41 @@
 # BIND-19 开发导航牌（PLAN）
 
-> **版本**：v1.0（v2.0-alpha 启动，2026-08-29）
-> **状态**：🚧 v2.0-alpha（物理锚定层编码）
+> **版本**：v1.1（v2.0-alpha 架构升级为协议家族，2026-08-29）
+> **状态**：🚧 v2.0-alpha（协议家族编码：PFP+SAP）
 > **分支**：v2.0-alpha
 > **所属方法论**：DNA 自生长方法论 v2.0（协议家族适配版）
 > **规则**：本文件只含当前阶段 + 下一阶段预览 + 阶段总览地图。完成阶段 → GROWTH.md。总行数 ≤150，超出触发历史迁移。
 > **组织级文档**：`.github/GOVERNANCE.md` + `.github/DNA.md` + `.github/RNA.md`（必读，见 RNA.md 三层加载协议）
+> **架构变更**：v1.0 PAL 24 字节方案 → v1.1 PFP+SAP 协议家族方案（PFP 4 字节冻结层 + SAP 28 字节演进层，解耦物理特征与安全证明）
 
 ---
 
-## 1. 当前阶段：v2.0-alpha（物理锚定层编码）
+## 1. 当前阶段：v2.0-alpha（协议家族编码：PFP+SAP）
 
-> **状态**：🚧 前置设计锁定完成（2026-08-29），待编码开工（DNA 方法论：计划先于代码）。
+> **状态**：🚧 T1 完成（PFP+SAP 结构编码），T2 待开工（DNA 方法论：计划先于代码）。
 
 ### 1.1 目标（基于规范正文调研）
 
 | 任务 | 内容 | 规范依据 | 状态 |
 |---|---|---|---|
-| T1 | PAL 24 字节固定偏移结构编码 + 解析器 | `docs/v2.0-upgrade-plan.md` 第四章 | ⏳ ADR-0001 |
-| T2 | BIND-19 帧结构升级（PAL-Present + 16-bit Seq-Counter） | 第五章 | ⏳ ADR-0004 |
+| T1 | PFP-xCF14 4 字节结构编码 + SAP-xCF14 28 字节结构编码 | 协议家族架构 | ✅ 完成（23 测试全通过） |
+| T2 | BIND-19 帧结构升级（PFP-Present + SAP-Present 标志位） | 帧结构总览 | ⏳ ADR-0008 |
 | T3 | PAH 第一层 64-bit 验证（ed25519 软件实现，SHA-256 前 64 位截断） | 规则 5 | ⏳ |
-| T4 | Replay-Enable=0 强制降级（规则 6）+ 调试模式例外（CI144_DEBUG=1） | 规则 6 | ⏳ |
+| T4 | Replay-Enable=0 强制降级（规则 6）+ 调试模式例外（CI144_DEBUG=1） | 规则 6 | ⏳（PFP 已实现 effective_risk_level） |
 | T5 | KEY_ROTATION 控制帧实现 + ACK 超时 fail-closed | 规则 7 | ⏳ ADR-0005 |
-| T6 | CATASTROPHIC 硬覆盖（规则 1-3）+ 事件驱动（无轮询） | 规则 1-3 | ⏳ |
+| T6 | CATASTROPHIC 硬覆盖（规则 1-3）+ 事件驱动（无轮询） | 规则 1-3 | ⏳（PFP 已实现 is_catastrophic_override） |
 
 ### 1.2 规范真相源（v2.0-alpha 调研结论）
 
-- **PAL 结构**：24 字节固定偏移，192 bits = 3×64-bit 对齐 SIMD；字段定义见 `docs/v2.0-upgrade-plan.md` 第四章
+- **协议家族架构**：PFP-xCF14（4 字节，冻结层）+ SAP-xCF14（28 字节，演进层，按需加载）
+- **家族魔数**：0xCF14（2 字节，大端序），所有子协议共享
+- **PFP 结构**：Byte0-1 Magic + Byte2 物理特征（Modality/Risk/Stance/Edge）+ Byte3 控制标志（Output-Dest/Override-Flag/Replay-Enable/Reserved）
+- **SAP 结构**：Byte0-1 Magic + Byte2 Protocol-ID(0x01) + Byte3 Version/Reserved + Byte4-5 Seq-Counter + Byte6-19 PAH-Hash(14B) + Byte20-27 PAH-Signature(8B)
 - **64-bit 截断算法**：完整 ECC 签名（Ed25519 512-bit）的 SHA-256 哈希值前 64 位（MSB），跨实现必须一致
-- **Seq-Counter**：16-bit，位置复用 BIND-19 v1.0 第 6-7 字节（原 Reserved）；冷启动随机值；AtomicU16 + SeqCst
+- **Seq-Counter**：16-bit，在 SAP 中；冷启动随机值；AtomicU16 + SeqCst；回绕阈值 65534 触发密钥轮换
 - **密钥轮换**：≥65534 触发；KEY_ROTATION 帧类型建议 0x07（需 ADR-0008 确认）；ACK 超时 100ms×3，失败停止发送（fail-closed，严禁回退）
 - **调试模式**：CI144_DEBUG=1 仅启动时读取；规则 1-3 仍生效；仅规则 6 风险降级可跳过；启动输出警告 banner
+- **节能模式**：SAP 不存在时，PFP.Replay-Enable 强制为 0，规则 6 自动触发降级至 MEDIUM
 
 ### 1.3 技术前提
 
@@ -48,13 +53,14 @@
 
 ### 1.5 验收标准
 
-- PAL 24 字节解析器：固定偏移读取，零拷贝，无分支
+- PFP 4 字节解析器：固定偏移读取，零拷贝，无分支；Family-Magic 验证 ✅
+- SAP 28 字节解析器：固定偏移读取，零拷贝；Protocol-ID 验证 ✅
 - 第一层 64-bit 验证：ed25519 软件实现，延迟 ≤100μs（Tuck 直接验证）
-- Seq-Counter 防重放：单调递增，回绕触发密钥轮换
+- Seq-Counter 防重放：单调递增，回绕阈值 65534 触发密钥轮换
 - KEY_ROTATION：ACK 超时 3 次失败后停止发送（fail-closed）
 - 调试模式：CI144_DEBUG=1 仅规则 6 降级可跳过，规则 1-3 仍生效
-- 向后兼容：v1.0 接收端忽略 PAL-Present，v2.0 接收端处理 v1.0 帧
-- 单元测试 + 集成测试全绿
+- 向后兼容：v1.0 接收端忽略 PFP-Present/SAP-Present，v2.0 接收端处理 v1.0 帧
+- 单元测试 + 集成测试全绿（当前 23 测试全通过）
 
 ### 1.6 下一阶段预览：v2.0-beta
 
