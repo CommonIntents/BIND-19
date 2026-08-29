@@ -22,7 +22,7 @@
 | T2 | BIND-19 帧结构升级（PFP-Present + SAP-Present 标志位） | 帧结构总览 | ✅ 完成（14 测试全通过） |
 | T3 | PAH 第一层 64-bit 验证（ed25519 软件实现，SHA-256 前 64 位截断） | 规则 5 | ✅ 完成（11 测试全通过） |
 | T4 | Replay-Enable=0 强制降级（规则 6）+ 调试模式例外（CI144_DEBUG=1） | 规则 6 | ✅ 完成（8 集成测试 + 5 配置测试） |
-| T5 | KEY_ROTATION 控制帧实现 + ACK 超时 fail-closed | 规则 7 | ⏳ ADR-0004, ADR-0005 |
+| T5 | KEY_ROTATION 控制帧实现 + ACK 超时 fail-closed | 规则 7 | ✅ 完成（13 测试全通过） |
 | T6 | CATASTROPHIC 硬覆盖（规则 1-3）+ 事件驱动（无轮询） | 规则 1-3 | ⏳（PFP 已实现 is_catastrophic_override） |
 
 ### 1.2 规范真相源（v2.0-alpha 调研结论）

@@ -62,6 +62,10 @@ pub enum FrameType {
     Handshake = 0x05,
     /// 0x06: Error（传输层错误）
     Error = 0x06,
+    /// 0x07: KeyRotation（密钥轮换控制帧，v2.0 新增，ADR-0008 确认未被占用）
+    KeyRotation = 0x07,
+    /// 0x08: KeyRotationAck（密钥轮换确认帧，v2.0 新增）
+    KeyRotationAck = 0x08,
     /// 未知帧类型（Standard Extensions 或 Private）
     Unknown(u8),
 }
@@ -75,6 +79,8 @@ impl FrameType {
             0x04 => Self::Vector,
             0x05 => Self::Handshake,
             0x06 => Self::Error,
+            0x07 => Self::KeyRotation,
+            0x08 => Self::KeyRotationAck,
             other => Self::Unknown(other),
         }
     }
@@ -87,6 +93,8 @@ impl FrameType {
             Self::Vector => 0x04,
             Self::Handshake => 0x05,
             Self::Error => 0x06,
+            Self::KeyRotation => 0x07,
+            Self::KeyRotationAck => 0x08,
             Self::Unknown(b) => b,
         }
     }
