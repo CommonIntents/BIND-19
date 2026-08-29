@@ -349,6 +349,52 @@ impl BindFrame {
     pub fn is_v1_compatible(&self) -> bool {
         self.pfp.is_none() && self.sap.is_none()
     }
+
+    /// 计算有效风险等级（考虑规则 6：Replay-Enable=0 强制降级）
+    ///
+    /// - 无 PFP 的帧（v1.0 兼容）：返回 None（无风险等级）
+    /// - 有 PFP 的帧：
+    ///   - 生产模式：Replay-Enable=0 时强制降级至 MEDIUM
+    ///   - 调试模式（CI144_DEBUG=1）：规则 6 可跳过，返回原始风险等级
+    ///
+    /// 注意：CATASTROPHIC 硬覆盖（规则 1-3）不受调试模式影响，始终生效。
+    pub fn effective_risk_level(&self) -> Option<crate::pfp::RiskLevel> {
+        self.effective_risk_level_with_config(crate::config::BindConfig::global())
+    }
+
+    /// 使用指定配置计算有效风险等级（用于测试）
+    pub fn effective_risk_level_with_config(
+        &self,
+        config: &crate::config::BindConfig,
+    ) -> Option<crate::pfp::RiskLevel> {
+        let pfp = self.pfp.as_ref()?;
+
+        if config.rule6_enabled() {
+            // 生产模式：应用规则 6 降级
+            Some(pfp.effective_risk_level())
+        } else {
+            // 调试模式：跳过规则 6，返回原始风险等级
+            Some(pfp.risk_level)
+        }
+    }
+
+    /// 检查是否触发 CATASTROPHIC 硬覆盖（规则 1，始终生效）
+    ///
+    /// 无论是否调试模式，CATASTROPHIC 硬覆盖始终生效。
+    pub fn is_catastrophic_override(&self) -> bool {
+        match &self.pfp {
+            Some(pfp) => pfp.is_catastrophic_override(),
+            None => false,
+        }
+    }
+
+    /// 检查 Replay-Enable 是否为 0（规则 6 触发条件）
+    pub fn is_replay_disabled(&self) -> bool {
+        match &self.pfp {
+            Some(pfp) => !pfp.replay_enable,
+            None => false, // v1.0 帧无 Replay-Enable 概念
+        }
+    }
 }
 
 // ─── 错误类型 ───────────────────────────────────────────────
@@ -393,6 +439,7 @@ impl std::error::Error for FrameError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::BindConfig;
     use crate::pfp::{Modality, OutputDest, OverrideFlag, PfpHeader, ProximityEdge, RiskLevel, BodyStance};
     use crate::sap::SapHeader;
 
@@ -616,5 +663,169 @@ mod tests {
         // 超过 64MB 应该失败
         let payload = vec![0u8; MAX_PAYLOAD_SIZE + 1];
         assert!(BindFrame::new_v1(FrameType::Data, 0, 0, payload).is_err());
+    }
+
+    // ─── T4 集成测试：规则 6 + 调试模式 ─────────────────────
+
+    #[test]
+    fn test_effective_risk_level_v1_frame() {
+        // v1.0 帧无 PFP，有效风险等级为 None
+        let frame = BindFrame::new_v1(FrameType::Data, 0, 0, vec![]).unwrap();
+        let config = BindConfig::default();
+        assert_eq!(frame.effective_risk_level_with_config(&config), None);
+    }
+
+    #[test]
+    fn test_effective_risk_level_production_replay_enabled() {
+        // 生产模式 + Replay-Enable=1 → 保持原始风险等级
+        let pfp = PfpHeader::new(
+            Modality::Executive,
+            RiskLevel::Critical,
+            BodyStance::Moving,
+            ProximityEdge::Danger,
+            OutputDest::External,
+            OverrideFlag::Normal,
+            true, // replay_enable
+        );
+        let frame = BindFrame::new(FrameType::Data, 0, 0, Some(pfp), None, vec![]).unwrap();
+        let config = BindConfig::default(); // 生产模式
+        assert_eq!(
+            frame.effective_risk_level_with_config(&config),
+            Some(RiskLevel::Critical)
+        );
+    }
+
+    #[test]
+    fn test_effective_risk_level_production_replay_disabled() {
+        // 生产模式 + Replay-Enable=0 → 强制降级至 MEDIUM（规则 6）
+        let pfp = PfpHeader::new(
+            Modality::Executive,
+            RiskLevel::Catastrophic,
+            BodyStance::Moving,
+            ProximityEdge::CriticalEdge,
+            OutputDest::External,
+            OverrideFlag::HardOverride,
+            false, // replay_enable = 0
+        );
+        let frame = BindFrame::new(FrameType::Data, 0, 0, Some(pfp), None, vec![]).unwrap();
+        let config = BindConfig::default(); // 生产模式
+        assert_eq!(
+            frame.effective_risk_level_with_config(&config),
+            Some(RiskLevel::Medium) // 强制降级
+        );
+        // 原始风险等级仍保留
+        assert_eq!(frame.pfp.unwrap().risk_level, RiskLevel::Catastrophic);
+    }
+
+    #[test]
+    fn test_effective_risk_level_debug_replay_disabled() {
+        // 调试模式 + Replay-Enable=0 → 跳过规则 6，返回原始风险等级
+        let pfp = PfpHeader::new(
+            Modality::Executive,
+            RiskLevel::Catastrophic,
+            BodyStance::Moving,
+            ProximityEdge::CriticalEdge,
+            OutputDest::External,
+            OverrideFlag::HardOverride,
+            false, // replay_enable = 0
+        );
+        let frame = BindFrame::new(FrameType::Data, 0, 0, Some(pfp), None, vec![]).unwrap();
+        let config = BindConfig { debug_mode: true }; // 调试模式
+        assert_eq!(
+            frame.effective_risk_level_with_config(&config),
+            Some(RiskLevel::Catastrophic) // 不降级
+        );
+    }
+
+    #[test]
+    fn test_catastrophic_override_always_enabled() {
+        // CATASTROPHIC 硬覆盖（规则 1）始终生效，不受调试模式影响
+        let pfp = PfpHeader::new(
+            Modality::Executive,
+            RiskLevel::Catastrophic,
+            BodyStance::Moving,
+            ProximityEdge::CriticalEdge,
+            OutputDest::External,
+            OverrideFlag::HardOverride,
+            false, // replay_enable = 0
+        );
+        let frame = BindFrame::new(FrameType::Data, 0, 0, Some(pfp), None, vec![]).unwrap();
+
+        // 生产模式：CATASTROPHIC 硬覆盖触发
+        assert!(frame.is_catastrophic_override());
+
+        // 调试模式：CATASTROPHIC 硬覆盖仍然触发（规则 1-3 不可跳过）
+        let config = BindConfig { debug_mode: true };
+        assert!(config.catastrophic_rules_enabled());
+        assert!(frame.is_catastrophic_override());
+    }
+
+    #[test]
+    fn test_is_replay_disabled() {
+        // Replay-Enable=0 的帧
+        let pfp_off = PfpHeader::new(
+            Modality::Cognitive,
+            RiskLevel::Low,
+            BodyStance::Unknown,
+            ProximityEdge::Safe,
+            OutputDest::Internal,
+            OverrideFlag::Normal,
+            false,
+        );
+        let frame_off =
+            BindFrame::new(FrameType::Data, 0, 0, Some(pfp_off), None, vec![]).unwrap();
+        assert!(frame_off.is_replay_disabled());
+
+        // Replay-Enable=1 的帧
+        let pfp_on = PfpHeader::new(
+            Modality::Cognitive,
+            RiskLevel::Low,
+            BodyStance::Unknown,
+            ProximityEdge::Safe,
+            OutputDest::Internal,
+            OverrideFlag::Normal,
+            true,
+        );
+        let frame_on =
+            BindFrame::new(FrameType::Data, 0, 0, Some(pfp_on), None, vec![]).unwrap();
+        assert!(!frame_on.is_replay_disabled());
+
+        // v1.0 帧无 Replay-Enable 概念
+        let frame_v1 = BindFrame::new_v1(FrameType::Data, 0, 0, vec![]).unwrap();
+        assert!(!frame_v1.is_replay_disabled());
+    }
+
+    #[test]
+    fn test_rule6_interaction_with_catastrophic() {
+        // 规则 6 降级至 MEDIUM 后，CATASTROPHIC 硬覆盖不再触发
+        // （因为有效风险等级是 MEDIUM，不是 CATASTROPHIC）
+        let pfp = PfpHeader::new(
+            Modality::Executive,
+            RiskLevel::Catastrophic,
+            BodyStance::Moving,
+            ProximityEdge::CriticalEdge,
+            OutputDest::External,
+            OverrideFlag::HardOverride,
+            false, // replay_enable = 0 → 规则 6 降级
+        );
+        let frame = BindFrame::new(FrameType::Data, 0, 0, Some(pfp), None, vec![]).unwrap();
+        let config = BindConfig::default(); // 生产模式
+
+        // 原始 PFP 标记为 CATASTROPHIC 硬覆盖
+        assert!(frame.is_catastrophic_override());
+
+        // 但有效风险等级被降级至 MEDIUM
+        // 实际决策时应使用有效风险等级，而非原始风险等级
+        assert_eq!(
+            frame.effective_risk_level_with_config(&config),
+            Some(RiskLevel::Medium)
+        );
+
+        // 调试模式下不降级，有效风险等级为 CATASTROPHIC
+        let debug_config = BindConfig { debug_mode: true };
+        assert_eq!(
+            frame.effective_risk_level_with_config(&debug_config),
+            Some(RiskLevel::Catastrophic)
+        );
     }
 }

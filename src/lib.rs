@@ -9,11 +9,15 @@
 //! - `sap` — Security Attestation Protocol（安全证明协议，防重放 + 完整性校验）
 //! - `frame` — BIND-19 帧结构（8 字节头部 + 可选 PFP/SAP 扩展层 + Payload）
 //! - `crypto` — PAH 第一层 64-bit 签名验证（ed25519 软件实现 + SHA-256 截断）
+//! - `config` — 运行时配置（调试模式 CI144_DEBUG + 环境变量）
 
+pub mod config;
 pub mod crypto;
 pub mod frame;
 pub mod pfp;
 pub mod sap;
+
+pub use config::{BindConfig, DEBUG_ENV_VAR};
 
 pub use crypto::{
     compute_pah_hash, sign, sign_truncated, truncate_signature, verify, verify_truncated_match,
