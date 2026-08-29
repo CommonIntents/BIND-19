@@ -257,5 +257,39 @@ BIND-19 is the **Single Source of Truth (SSOT)** for the CI-144 Protocol Family.
 | CAPABILITY-13 | [CommonIntents/CAPABILITY-13](https://github.com/CommonIntents/CAPABILITY-13) |
 | INTENT-7-SECURE | [CommonIntents/INTENT-7-SECURE](https://github.com/CommonIntents/INTENT-7-SECURE) |
 
+## Appendix: Design Inspiration & Conceptual Isomorphism (Inspired by)
+
+CI-144 Protocol Family is an **independent implementation**, but its design philosophy is **inspired by** mature infrastructure projects that have been validated over decades. We stand on the shoulders of giants.
+
+> **"Inspired by" means: we learned the design ideas, implemented independently. Ideas are not copyrightable; this is open-source etiquette, not a legal obligation.**
+
+### Conceptual Isomorphism Table
+
+| Mature Infrastructure | Years Validated | CI-144 Design Point Inspired | Isomorphism |
+|---|---|---|---|
+| **EtherType** (IEEE 802.3) | 40+ | PFP `Family-Magic` (0xCF14) | 2-byte fixed-offset protocol identifier, hardware-friendly |
+| **IP Protocol Number** (RFC 790) | 40+ | Sub-protocol ID (1 byte, fixed allocation table) | 1-byte upper-layer protocol identifier, fixed assignment |
+| **PROFIsafe** (IEC 61784-3) | 20+ | Rule 6: forced downgrade to safe state (Replay-Enable=0 → MEDIUM) | Fail-safe communication: when security mechanism is disabled, force downgrade to safe state |
+| **CAN Bus** (ISO 11898) | 30+ | `Risk-Level` priority field (fixed-offset, high-priority frames processed first) | Fixed-offset priority field, hardware-level scheduling |
+| **TLS 1.3** (RFC 8446) | 5+ | Fixed encryption path (AES-GCM, no "encrypt or not" branch) | Fixed cipher suite, no branching, hardware acceleration pipeline-friendly |
+| **OpenSSL Documentation Policy** | 20+ | "One authority, multiple presentations" (spec + code + tests in same PR) | Code and documentation reviewed and merged together, never diverge |
+
+### Why This Matters
+
+| Benefit | Explanation |
+|---|---|
+| **Trust Transfer** | Users trust infrastructure validated over decades; CI-144's conceptual isomorphism transfers that trust |
+| **Lower Criticism Threshold** | When design is questioned, we can say "this is conceptually isomorphic to EtherType" instead of "we thought of it ourselves" |
+| **Open-Source Etiquette** | Acknowledge the giants whose shoulders we stand on |
+| **Reduced Explanation** | Readers who see this appendix understand the design philosophy without further explanation |
+
+### Key Principle
+
+> **Acknowledgment is credit endorsement, not a disclaimer.**
+>
+> When we say "inspired by mature infrastructure," we are not making excuses ("so don't blame me if it's wrong"). We are building credibility ("these paths have been validated, so our choices have basis").
+
+---
+
 ## License
 Apache 2.0 — see [LICENSE](LICENSE).
