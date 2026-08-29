@@ -11,7 +11,9 @@
 //! - `crypto` — PAH 第一层 64-bit 签名验证（ed25519 软件实现 + SHA-256 截断）
 //! - `config` — 运行时配置（调试模式 CI144_DEBUG + 环境变量）
 //! - `rotation` — 密钥轮换状态机（KEY_ROTATION 帧 + ACK 超时 fail-closed）
+//! - `catastrophic` — CATASTROPHIC 硬覆盖（规则 1-3）+ 事件驱动总线 + 审计日志
 
+pub mod catastrophic;
 pub mod config;
 pub mod crypto;
 pub mod frame;
@@ -19,6 +21,11 @@ pub mod pfp;
 pub mod rotation;
 pub mod sap;
 
+pub use catastrophic::{
+    AuditEntry, CatastrophicAuditLog, CatastrophicEvent, CatastrophicEventBus,
+    CatastrophicEventReceiver, CatastrophicManager, AUDIT_LOG_MAX_ENTRIES,
+    EVENT_BUS_CAPACITY,
+};
 pub use config::{BindConfig, DEBUG_ENV_VAR};
 pub use rotation::{
     KeyRotationPayload, KeyRotationStateMachine, RotationError, RotationState, TimeoutResult,
