@@ -239,6 +239,17 @@ Run all tests:
 cargo test --all-targets
 ```
 
+## Specification Repos (Publication Windows)
+
+BIND-19 is the **Single Source of Truth (SSOT)** for the CI-144 Protocol Family. The following repos are **publication windows** (spec mirrors), not independent authorities:
+
+| Protocol | Repo | Spec Authority (in BIND-19) |
+|---|---|---|
+| **PFP-xCF14** (Physical Feature, 4 bytes, Frozen) | [CommonIntents/PFP-xCF14](https://github.com/CommonIntents/PFP-xCF14) | [`docs/spec/pfp-xcf14.md`](docs/spec/pfp-xcf14.md) |
+| **SAP-xCF14** (Security Attestation, 28 bytes, Evolving) | [CommonIntents/SAP-xCF14](https://github.com/CommonIntents/SAP-xCF14) | [`docs/spec/sap-xcf14.md`](docs/spec/sap-xcf14.md) |
+
+> **All spec change PRs must be filed in BIND-19**, updating `docs/spec/` + `src/` + `tests/` together (OpenSSL model). The publication window repos do not accept spec change PRs.
+
 ## Related
 | Protocol | Repository |
 |:---|:---|
