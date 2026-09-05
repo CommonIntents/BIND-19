@@ -6,6 +6,9 @@
 [![Examples](https://img.shields.io/badge/examples-4-orange.svg)]()
 [![Benchmarks](https://img.shields.io/badge/benchmarks-14-purple.svg)]()
 
+> **仓库双身份**：本分支（v2.0-alpha）= **Rust 参考实现**（142 tests，含 PFP/SAP 解析器）；
+> 协议规范正文在 `main` 分支（v1.0.0-RFC-4，spec-only，tag `v1.0.0-RFC-4`）。规范与实现分离，各自独立演进。
+
 **Flexible, thin, replaceable.** BIND-19 is the adaptation layer between INTENT-7 (intent syntax) and concrete transport implementations. It defines *how* INTENT-7 intents are carried — format negotiation, integrity checks, and version compatibility declaration.
 
 ## 🏆 v2.0-rc.1 Battle Results
