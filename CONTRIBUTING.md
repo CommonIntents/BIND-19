@@ -79,3 +79,13 @@ Significant spec changes (new fields, new protocol versions, security model chan
 ### Version Tagging
 
 When a spec version is finalized, tag the BIND-19 repo with the corresponding version (e.g., `v2.0-rc.1`, `v2.0.0`). The publication window repos reference this tag in their authority declaration.
+
+## Contributor Intellectual Property Terms
+
+By submitting a contribution (code, specification text, documentation, or test vectors), you agree that:
+
+1. **You have the right** to grant the licenses below (you are the author, or you hold the rights holder's permission).
+2. **Code contributions** are licensed to the project under the [Apache License 2.0](LICENSE) — including the patent license in §5 of that license.
+3. **Specification and documentation contributions** are licensed under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/), as stated in each specification's header.
+4. No separate copyright assignment is required; the grants above are perpetual, worldwide, and irrevocable for the project's use.
+

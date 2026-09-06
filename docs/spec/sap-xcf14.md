@@ -1,4 +1,5 @@
 # SAP-xCF14 — Security Attestation Protocol Specification
+> © 2026 CommonIntents. Licensed under CC BY-ND 4.0 (https://creativecommons.org/licenses/by-nd/4.0/).
 
 > **版本**：v1.0（演进层）
 > **日期**：2026-08-29

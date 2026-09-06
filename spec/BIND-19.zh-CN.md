@@ -1,4 +1,5 @@
 # BIND-19：传输绑定与分层语义成帧规范（v1.0.0-RFC-4）
+> © 2026 CommonIntents. 依据 CC BY-ND 4.0 许可（https://creativecommons.org/licenses/by-nd/4.0/）。
 
 ## 1. 引言与设计目标
 本规范定义了 **BIND-19** 协议，它是 **CommonIntents-144（CI-144）** 协议族中一套独立的传输层语义成帧与能力协商标准。

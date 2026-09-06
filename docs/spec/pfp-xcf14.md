@@ -1,4 +1,5 @@
 # PFP-xCF14 — Physical Feature Protocol Specification
+> © 2026 CommonIntents. Licensed under CC BY-ND 4.0 (https://creativecommons.org/licenses/by-nd/4.0/).
 
 > **版本**：v1.0（冻结层）
 > **日期**：2026-08-29

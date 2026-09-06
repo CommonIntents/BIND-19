@@ -1,4 +1,5 @@
 # BIND-19: Transport Binding and Layered Semantic Framing Specification (v1.0.0-RFC-4)
+> © 2026 CommonIntents. Licensed under CC BY-ND 4.0 (https://creativecommons.org/licenses/by-nd/4.0/).
 
 ## 1. Introduction and Objectives
 
