@@ -2,6 +2,9 @@
 //!
 //! vector-category: pfp_codec
 //!
+//! Correctness is asserted against the golden in `tests/test_vectors/golden/`,
+//! not against the loader's own expectations.
+//!
 //! The vector file has declared these five since 2026-08-29 and nothing read
 //! them (K-013). This is the first batch of waivers being paid off rather than
 //! extended: `pfp_codec` was scheduled first precisely because `src/pfp.rs`
@@ -236,5 +239,61 @@ fn the_category_has_five_distinct_vectors() {
         encodings.len(),
         vectors.len(),
         "two vectors encode to the same bytes, so one of them proves nothing: {encodings:?}"
+    );
+}
+
+/// The reference output for this category, produced by `src/pfp.rs` and kept
+/// beside the manifest.
+///
+/// This is what separates "the vector was read" from "the vector is correct":
+/// the manifest states the expected bytes, and the golden is the independent
+/// record of what the reference implementation actually produced. Comparing
+/// both means a change to either side is caught, and a loader that merely loads
+/// cannot pass.
+fn golden_hex() -> std::collections::BTreeMap<String, String> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let path = root.join("tests/test_vectors/golden/pfp_codec.json");
+    let raw = std::fs::read_to_string(&path)
+        .unwrap_or_else(|e| panic!("cannot read golden {}: {e}", path.display()));
+    let json: serde_json::Value = serde_json::from_str(&raw).expect("golden is not JSON");
+    assert_eq!(
+        json.get("category").and_then(|c| c.as_str()),
+        Some("pfp_codec"),
+        "golden file is for a different category"
+    );
+    let map = json
+        .get("encoded_hex")
+        .and_then(|m| m.as_object())
+        .expect("golden has no `encoded_hex` object");
+    map.iter()
+        .map(|(k, v)| {
+            (
+                k.clone(),
+                v.as_str().expect("golden value is not a string").to_string(),
+            )
+        })
+        .collect()
+}
+
+/// Every vector's encoding equals the reference implementation's recorded
+/// output, and the golden covers exactly the declared set in both directions.
+#[test]
+fn encoding_matches_the_reference_golden() {
+    let golden = golden_hex();
+    let vectors = pfp_codec_vectors();
+
+    for v in &vectors {
+        let hex: String = encode_vector(v).iter().map(|b| format!("{b:02x}")).collect();
+        let want = golden
+            .get(&v.id)
+            .unwrap_or_else(|| panic!("{} has no golden entry", v.id));
+        assert_eq!(&hex, want, "{}: differs from the reference golden", v.id);
+    }
+    let declared: std::collections::BTreeSet<&str> =
+        vectors.iter().map(|v| v.id.as_str()).collect();
+    let recorded: std::collections::BTreeSet<&str> = golden.keys().map(|k| k.as_str()).collect();
+    assert_eq!(
+        declared, recorded,
+        "the golden and the manifest disagree about which vectors exist"
     );
 }

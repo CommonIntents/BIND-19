@@ -1,0 +1,11 @@
+{
+ "_note": "Output produced by the reference implementation (src/pfp.rs) and compared against the manifest. Exists so that CI-4 can tell 'loaded' from 'correct': a vector that is read but produces the wrong bytes must fail.",
+ "category": "pfp_codec",
+ "encoded_hex": {
+  "pfp-all_zero": "cf143000",
+  "pfp-all_one": "cf14ef07",
+  "pfp-typical_executive": "cf145605",
+  "pfp-cognitive_low": "cf140004",
+  "pfp-render_critical": "cf14a905"
+ }
+}

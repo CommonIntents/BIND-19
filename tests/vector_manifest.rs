@@ -85,6 +85,36 @@ fn declared_categories(sources: &[PathBuf]) -> BTreeSet<String> {
     out
 }
 
+/// Categories with a golden file on disk: the loader asserts its output against
+/// this, so "loaded" and "correct" are two different facts and CI-4 can tell
+/// them apart.
+///
+/// Without this, CI-4 is a reachability check — it would report green for a
+/// vector that is read and produces the wrong bytes. That is the same defect as
+/// probing that a port is open and calling it an audit: it measures that
+/// something is there, not that it works.
+fn categories_with_golden() -> BTreeSet<String> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut out = BTreeSet::new();
+    let Ok(entries) = fs::read_dir(root.join("tests/test_vectors/golden")) else {
+        return out;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        if let Ok(text) = fs::read_to_string(&path) {
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) {
+                if let Some(c) = v.get("category").and_then(|c| c.as_str()) {
+                    out.insert(c.to_string());
+                }
+            }
+        }
+    }
+    out
+}
+
 /// `<id>` -> its manifest category. Waiver keys use this pair, so the mapping
 /// has to come from the file rather than from the id's spelling.
 fn category_map(json: &serde_json::Value) -> std::collections::BTreeMap<String, String> {
@@ -297,6 +327,64 @@ fn every_declared_vector_is_exercised_by_a_test() {
         declared.len(),
         unexercised.join("\n  ")
     );
+}
+
+/// M8 — the load-bearing one for CI-4's second half.
+///
+/// A category can be declared loaded, and the loader can read the manifest, and
+/// the vectors can still produce the wrong bytes. Reachability is not
+/// correctness: every check in this family that measured "is it there" instead
+/// of "does it work" has been wrong in the same direction.
+///
+/// So a declared loader must also carry a golden file, and the loader must
+/// compare against it. `golden_is_compared_by_the_loader` below checks the
+/// second half by looking for the comparison in the loader's source; this one
+/// checks that the file exists for every declared category.
+#[test]
+fn every_loaded_category_has_a_golden() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let sources = exercising_sources(&root.join(EXERCISING_DIRS[0]));
+    let declared = declared_categories(&sources);
+    let golden = categories_with_golden();
+
+    let missing: Vec<&String> = declared.difference(&golden).collect();
+    assert!(
+        missing.is_empty(),
+        "{} declared loader(s) have no golden file, so only reachability is \
+         checked, not correctness:\n  {}\n\
+         Add tests/test_vectors/golden/<category>.json produced by the reference \
+         implementation, and compare the loader's output against it.",
+        missing.len(),
+        missing.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("\n  ")
+    );
+}
+
+/// The golden must actually be used. A golden file nothing compares against is
+/// the same decorative object as a waiver nothing reads.
+#[test]
+fn golden_is_compared_by_the_loader() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let sources = exercising_sources(&root.join(EXERCISING_DIRS[0]));
+    let declared = declared_categories(&sources);
+
+    for category in &declared {
+        let marker = format!("vector-category: {category}");
+        let loader = sources
+            .iter()
+            .find(|p| {
+                fs::read_to_string(p)
+                    .map(|t| t.contains(&marker))
+                    .unwrap_or(false)
+            })
+            .unwrap_or_else(|| panic!("no loader declares {category}"));
+        let text = fs::read_to_string(loader).unwrap();
+        assert!(
+            text.contains("golden"),
+            "{} declares {category} but never names the golden file, so its \
+             assertions are against something other than the reference output",
+            loader.display()
+        );
+    }
 }
 
 #[test]
