@@ -1,246 +1,213 @@
 # ci/baseline.toml — the ONE waiver file every shape check shares.
 #
-# Rules that make a waiver a debt rather than a permission:
-#   1. `owner` and `due` are mandatory. An exemption nobody owns is not an
-#      exemption, it is an omission.
-#   2. On `due`, the waiver STOPS WORKING and the check goes red again. It does
-#      not renew itself.
-#   3. The count only shrinks. Adding a waiver requires removing one, so the
-#      list cannot quietly become the new normal.
+# A waiver is a debt with a date, not a permission:
+#   1. `owner` and `due` are mandatory. An exemption nobody owns is an omission.
+#   2. On `due` the waiver STOPS WORKING and the check goes red again.
+#   3. WAIVERS ARE BATCHED. The 33 CI-4 targets were first given one shared date,
+#      which is its own defect: they are eight independent implementations (the
+#      vector file has no loader at all — zero parse calls across tests/), so a
+#      single deadline would turn the whole repo red on one morning and get the
+#      gate switched off rather than satisfied. A date that cannot be met is a
+#      date that gets removed.
+#   4. The counts are NOT written here. The checker derives them; a written-down
+#      number rots (P8).
 #
-# Deliberately NOT in the file it protects: a file must not be able to sign its
-# own pass (that is the PFP Override-Flag shape, and P4 forbids it).
-#
-# The numbers are deliberately absent — the check derives them. A written-down
-# count rots (P8).
+# Batch order follows how much already exists to build on: `pfp_codec` first,
+# because src/pfp.rs already has the codec and its unit tests, so those five can
+# be proven rather than promised.
 
 [[waiver]]
 check   = "CI-4"
 target  = "catastrophic_detection/catastrophic-catastrophic_override"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-11-13"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-11-13"
 
 [[waiver]]
 check   = "CI-4"
 target  = "catastrophic_detection/catastrophic-catastrophic_no_override"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-11-13"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-11-13"
 
 [[waiver]]
 check   = "CI-4"
 target  = "catastrophic_detection/catastrophic-critical_override"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-11-13"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-11-13"
 
 [[waiver]]
 check   = "CI-4"
 target  = "frame_codec/frame-v1_compat"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-12-11"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-12-11"
 
 [[waiver]]
 check   = "CI-4"
 target  = "frame_codec/frame-pfp_only"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-12-11"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-12-11"
 
 [[waiver]]
 check   = "CI-4"
 target  = "frame_codec/frame-pfp_sap"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-12-11"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-12-11"
 
 [[waiver]]
 check   = "CI-4"
 target  = "frame_codec/frame-pfp_sap_payload"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-12-11"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-12-11"
 
 [[waiver]]
 check   = "CI-4"
 target  = "frame_codec/frame-max_payload"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-12-11"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-12-11"
 
 [[waiver]]
 check   = "CI-4"
 target  = "key_rotation/rotation-threshold-detection"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-11-27"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-11-27"
 
 [[waiver]]
 check   = "CI-4"
 target  = "key_rotation/rotation-start-pending"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-11-27"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-11-27"
 
 [[waiver]]
 check   = "CI-4"
 target  = "key_rotation/rotation-ack-success"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-11-27"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-11-27"
 
 [[waiver]]
 check   = "CI-4"
 target  = "key_rotation/rotation-complete-idle"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-11-27"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-11-27"
 
 [[waiver]]
 check   = "CI-4"
 target  = "pah_signature/pah-full-signature"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-16"
 
 [[waiver]]
 check   = "CI-4"
 target  = "pah_signature/pah-truncated-signature"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-16"
 
 [[waiver]]
 check   = "CI-4"
 target  = "pah_signature/pah-wrong-signature-rejected"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
 owner   = "TBD"
-due     = "2026-10-18"
-
-[[waiver]]
-check   = "CI-4"
-target  = "pfp_codec/pfp-all_zero"
-reason  = "declared but no test exercises it yet (K-013)"
-owner   = "TBD"
-due     = "2026-10-18"
-
-[[waiver]]
-check   = "CI-4"
-target  = "pfp_codec/pfp-all_one"
-reason  = "declared but no test exercises it yet (K-013)"
-owner   = "TBD"
-due     = "2026-10-18"
-
-[[waiver]]
-check   = "CI-4"
-target  = "pfp_codec/pfp-typical_executive"
-reason  = "declared but no test exercises it yet (K-013)"
-owner   = "TBD"
-due     = "2026-10-18"
-
-[[waiver]]
-check   = "CI-4"
-target  = "pfp_codec/pfp-cognitive_low"
-reason  = "declared but no test exercises it yet (K-013)"
-owner   = "TBD"
-due     = "2026-10-18"
-
-[[waiver]]
-check   = "CI-4"
-target  = "pfp_codec/pfp-render_critical"
-reason  = "declared but no test exercises it yet (K-013)"
-owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-16"
 
 [[waiver]]
 check   = "CI-4"
 target  = "replay_protection/replay-normal_increment"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-30"
 
 [[waiver]]
 check   = "CI-4"
 target  = "replay_protection/replay-exact_replay"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-30"
 
 [[waiver]]
 check   = "CI-4"
 target  = "replay_protection/replay-old_seq"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-30"
 
 [[waiver]]
 check   = "CI-4"
 target  = "replay_protection/replay-large_jump"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-30"
 
 [[waiver]]
 check   = "CI-4"
 target  = "replay_protection/replay-new_source"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-30"
 
 [[waiver]]
 check   = "CI-4"
 target  = "rule6_downgrade/rule6-catastrophic_replay_disabled"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-30"
 
 [[waiver]]
 check   = "CI-4"
 target  = "rule6_downgrade/rule6-critical_replay_disabled"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-30"
 
 [[waiver]]
 check   = "CI-4"
 target  = "rule6_downgrade/rule6-low_replay_enabled"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-30"
 
 [[waiver]]
 check   = "CI-4"
 target  = "sap_codec/sap-seq_zero"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-16"
 
 [[waiver]]
 check   = "CI-4"
 target  = "sap_codec/sap-seq_max"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-16"
 
 [[waiver]]
 check   = "CI-4"
 target  = "sap_codec/sap-seq_42"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-16"
 
 [[waiver]]
 check   = "CI-4"
 target  = "sap_codec/sap-seq_rotation_threshold"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-16"
 
 [[waiver]]
 check   = "CI-4"
 target  = "sap_codec/sap-seq_1000"
-reason  = "declared but no test exercises it yet (K-013)"
+reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
 owner   = "TBD"
-due     = "2026-10-18"
+due     = "2026-10-16"

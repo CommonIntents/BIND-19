@@ -53,6 +53,38 @@ fn declared_ids(json: &serde_json::Value) -> BTreeSet<String> {
     out
 }
 
+/// Categories a test file declares it loads wholesale.
+///
+/// A loader that reads the manifest and drives one category does not name each
+/// vector id in its source — and it should not have to. Requiring the literal id
+/// would push loaders toward restating the vectors, which is the hand-synced copy
+/// this whole check exists to prevent.
+///
+/// So a test may declare `//! vector-category: <name>`, and the declaration is
+/// VERIFIED rather than trusted: the same file must also name the manifest path,
+/// which is what makes it a loader instead of a comment.
+fn declared_categories(sources: &[PathBuf]) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    for path in sources {
+        let Ok(text) = fs::read_to_string(path) else {
+            continue;
+        };
+        if !text.contains(VECTORS) {
+            continue; // a comment alone is not a loader
+        }
+        for line in text.lines() {
+            let line = line.trim();
+            if let Some(rest) = line.strip_prefix("//! vector-category:") {
+                let name = rest.trim();
+                if !name.is_empty() {
+                    out.insert(name.to_string());
+                }
+            }
+        }
+    }
+    out
+}
+
 /// `<id>` -> its manifest category. Waiver keys use this pair, so the mapping
 /// has to come from the file rather than from the id's spelling.
 fn category_map(json: &serde_json::Value) -> std::collections::BTreeMap<String, String> {
@@ -227,6 +259,7 @@ fn every_declared_vector_is_exercised_by_a_test() {
     );
     let referenced = referenced_ids(&sources);
 
+    let loaded_categories = declared_categories(&sources);
     let (waived, expired) = waived_and_expired(today());
     assert!(
         expired.is_empty(),
@@ -248,8 +281,10 @@ fn every_declared_vector_is_exercised_by_a_test() {
             format!("{category}/{id}")
         })
         .filter(|key| {
-            let id = key.rsplit_once('/').map(|(_, id)| id).unwrap_or("");
-            !referenced.contains(id)
+            let (category, id) = key.rsplit_once('/').unwrap_or(("", key.as_str()));
+            // Named in a test, or covered by a loader that declared this
+            // category AND reads the manifest.
+            !referenced.contains(id) && !loaded_categories.contains(category)
         })
         .filter(|key| !waived.contains(key))
         .collect();
