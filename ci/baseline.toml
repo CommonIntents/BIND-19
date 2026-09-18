@@ -19,21 +19,21 @@
 [[waiver]]
 check   = "CI-4"
 target  = "catastrophic_detection/catastrophic-catastrophic_override"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-11-13"
+reason  = "BLOCKED on H4 (which of the four statements is authoritative): these vectors pin an interpretation of rule 6 or the raw-risk predicate, and the spec contradicts itself. Implementing them now would freeze a possibly-wrong side into a golden. The due date is a placeholder until the ruling arrives."
 owner   = "TBD"
 due     = "2026-11-13"
 
 [[waiver]]
 check   = "CI-4"
 target  = "catastrophic_detection/catastrophic-catastrophic_no_override"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-11-13"
+reason  = "BLOCKED on H4 (which of the four statements is authoritative): these vectors pin an interpretation of rule 6 or the raw-risk predicate, and the spec contradicts itself. Implementing them now would freeze a possibly-wrong side into a golden. The due date is a placeholder until the ruling arrives."
 owner   = "TBD"
 due     = "2026-11-13"
 
 [[waiver]]
 check   = "CI-4"
 target  = "catastrophic_detection/catastrophic-critical_override"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-11-13"
+reason  = "BLOCKED on H4 (which of the four statements is authoritative): these vectors pin an interpretation of rule 6 or the raw-risk predicate, and the spec contradicts itself. Implementing them now would freeze a possibly-wrong side into a golden. The due date is a placeholder until the ruling arrives."
 owner   = "TBD"
 due     = "2026-11-13"
 
@@ -159,21 +159,21 @@ due     = "2026-10-30"
 [[waiver]]
 check   = "CI-4"
 target  = "rule6_downgrade/rule6-catastrophic_replay_disabled"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
+reason  = "BLOCKED on H4 (which of the four statements is authoritative): these vectors pin an interpretation of rule 6 or the raw-risk predicate, and the spec contradicts itself. Implementing them now would freeze a possibly-wrong side into a golden. The due date is a placeholder until the ruling arrives."
 owner   = "TBD"
 due     = "2026-10-30"
 
 [[waiver]]
 check   = "CI-4"
 target  = "rule6_downgrade/rule6-critical_replay_disabled"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
+reason  = "BLOCKED on H4 (which of the four statements is authoritative): these vectors pin an interpretation of rule 6 or the raw-risk predicate, and the spec contradicts itself. Implementing them now would freeze a possibly-wrong side into a golden. The due date is a placeholder until the ruling arrives."
 owner   = "TBD"
 due     = "2026-10-30"
 
 [[waiver]]
 check   = "CI-4"
 target  = "rule6_downgrade/rule6-low_replay_enabled"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
+reason  = "BLOCKED on H4 (which of the four statements is authoritative): these vectors pin an interpretation of rule 6 or the raw-risk predicate, and the spec contradicts itself. Implementing them now would freeze a possibly-wrong side into a golden. The due date is a placeholder until the ruling arrives."
 owner   = "TBD"
 due     = "2026-10-30"
 
