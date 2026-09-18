@@ -1,0 +1,11 @@
+{
+ "_note": "Output produced by the reference implementation (src/sap.rs) and compared against the manifest. Exists so CI-4 can tell loaded from correct.",
+ "category": "sap_codec",
+ "encoded_hex": {
+  "sap-seq_zero": "cf140101000000000000000000000000000000000000000000000000",
+  "sap-seq_max": "cf140101ffffffffffffffffffffffffffffffffffffffffffffffff",
+  "sap-seq_42": "cf140101002aababababababababababababababcdcdcdcdcdcdcdcd",
+  "sap-seq_rotation_threshold": "cf140101fffe11111111111111111111111111112222222222222222",
+  "sap-seq_1000": "cf14010103e8dedededededededededededededeadadadadadadadad"
+ }
+}

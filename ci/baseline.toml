@@ -103,23 +103,23 @@ due     = "2026-11-27"
 [[waiver]]
 check   = "CI-4"
 target  = "pah_signature/pah-full-signature"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
+reason  = "K-013, but NOT a test gap: src/sap.rs carries a pah_signature field and no truncation or verification (spec sap:3.7). Feasibility check moved this batch — it is from-scratch work, not wiring up existing code."
 owner   = "TBD"
-due     = "2026-10-16"
+due     = "2026-11-27"
 
 [[waiver]]
 check   = "CI-4"
 target  = "pah_signature/pah-truncated-signature"
 reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
 owner   = "TBD"
-due     = "2026-10-16"
+due     = "2026-11-27"
 
 [[waiver]]
 check   = "CI-4"
 target  = "pah_signature/pah-wrong-signature-rejected"
 reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
 owner   = "TBD"
-due     = "2026-10-16"
+due     = "2026-11-27"
 
 [[waiver]]
 check   = "CI-4"
@@ -177,37 +177,3 @@ reason  = "declared but no test exercises it yet (K-013); batch 2026-10-30"
 owner   = "TBD"
 due     = "2026-10-30"
 
-[[waiver]]
-check   = "CI-4"
-target  = "sap_codec/sap-seq_zero"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
-owner   = "TBD"
-due     = "2026-10-16"
-
-[[waiver]]
-check   = "CI-4"
-target  = "sap_codec/sap-seq_max"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
-owner   = "TBD"
-due     = "2026-10-16"
-
-[[waiver]]
-check   = "CI-4"
-target  = "sap_codec/sap-seq_42"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
-owner   = "TBD"
-due     = "2026-10-16"
-
-[[waiver]]
-check   = "CI-4"
-target  = "sap_codec/sap-seq_rotation_threshold"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
-owner   = "TBD"
-due     = "2026-10-16"
-
-[[waiver]]
-check   = "CI-4"
-target  = "sap_codec/sap-seq_1000"
-reason  = "declared but no test exercises it yet (K-013); batch 2026-10-16"
-owner   = "TBD"
-due     = "2026-10-16"
